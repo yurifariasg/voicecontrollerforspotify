@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" tools:context="com.voicecontroller.ConfirmationActivity"
+    tools:deviceIds="wear_round" android:keepScreenOn="true">
+
+    <ImageView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/trackImage"
+        android:layout_alignParentTop="true"
+        android:src="@color/white"
+        android:layout_alignParentStart="true" />
+
+    <TextView android:id="@+id/trackNameTv" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_centerHorizontal="true"
+        android:textSize="26sp" android:lines="1"
+        android:shadowColor="@android:color/black" android:shadowRadius="18"
+        android:layout_centerVertical="true" android:text="Hero of War"
+        android:paddingBottom="20dp"/>
+
+    <TextView android:id="@+id/artistNameTv" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_centerHorizontal="true"
+        android:shadowColor="@android:color/black" android:shadowRadius="18"
+        android:layout_above="@id/trackNameTv" android:textSize="17sp"
+        android:layout_centerVertical="true" android:text="Rise Against"/>
+
+    <android.support.wearable.view.DelayedConfirmationView
+        android:id="@+id/delay_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/trackNameTv"
+        android:layout_marginTop="-20dp"
+        android:padding="18dp"
+        android:src="@drawable/ic_full_cancel"
+        app:circle_border_color="@color/white"
+        app:circle_border_width="10dp"
+        app:circle_radius="40dp"
+        app:circle_radius_pressed="50dp"
+        app:circle_color="@color/blue"
+        app:update_interval="10"/>
+
+</RelativeLayout>

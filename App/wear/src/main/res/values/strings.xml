@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">VoiceController</string>
+    <string name="hello_round">Starting your tune..</string>
+    <string name="hello_square">Starting your tune..</string>
+    <string name="sending">Sending</string>
+    <string name="to_device">to your device</string>
+    <string name="title_activity_confirmation">ConfirmationActivity</string>
+
+</resources>
