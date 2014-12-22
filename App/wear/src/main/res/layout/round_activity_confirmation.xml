@@ -10,21 +10,25 @@
         android:layout_height="fill_parent"
         android:id="@+id/trackImage"
         android:layout_alignParentTop="true"
-        android:src="@color/white"
+        android:src="@color/black"
         android:layout_alignParentStart="true" />
 
     <TextView android:id="@+id/trackNameTv" android:layout_width="wrap_content"
         android:layout_height="wrap_content" android:layout_centerHorizontal="true"
         android:textSize="26sp" android:lines="1"
         android:shadowColor="@android:color/black" android:shadowRadius="18"
-        android:layout_centerVertical="true" android:text="Hero of War"
+        android:layout_centerVertical="true" android:text="Hero of War asdas a bigger text that we should show"
+        android:singleLine="true" android:ellipsize="end"
+        android:paddingLeft="10dp" android:paddingRight="10dp"
         android:paddingBottom="20dp"/>
 
     <TextView android:id="@+id/artistNameTv" android:layout_width="wrap_content"
         android:layout_height="wrap_content" android:layout_centerHorizontal="true"
         android:shadowColor="@android:color/black" android:shadowRadius="18"
         android:layout_above="@id/trackNameTv" android:textSize="17sp"
-        android:layout_centerVertical="true" android:text="Rise Against"/>
+        android:singleLine="true" android:ellipsize="end"
+        android:paddingLeft="15dp" android:paddingRight="15dp"
+        android:layout_centerVertical="true" android:text="Rise Against and another huge band name that we could show"/>
 
     <android.support.wearable.view.DelayedConfirmationView
         android:id="@+id/delay_view"
