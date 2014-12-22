@@ -16,6 +16,11 @@ public class OAuthRecord extends SugarRecord<OAuthRecord> {
         this.expiration = expiresIn;
     }
 
+    public boolean isValid() {
+        long now = System.currentTimeMillis() / 1000;
+        return now < expiration;
+    }
+
     @Override
     public String toString() {
         return "<OAuthRecord> " + token + " - " + this.expiration;

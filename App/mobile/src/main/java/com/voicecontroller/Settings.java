@@ -7,9 +7,11 @@ public class Settings {
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
     public static float BLUR = 8f;
-    public static boolean ACTIVATE_CRASHLYTICS = true;
+    public static boolean ACTIVATE_CRASHLYTICS = false;
     public static boolean BLUR_IMAGES = true;
     public static boolean START_SPOTIFY_ON_QUERY = false;
     public static boolean USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY = false;
+    public static boolean USE_KEYGUARD_ON_SENDING_TRACK_TO_SPOTIFY = false;
+    public static boolean USE_NATIVE_PLAYER = true;
 
 }
