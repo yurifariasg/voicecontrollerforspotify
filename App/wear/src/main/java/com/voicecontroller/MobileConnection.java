@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
@@ -45,35 +46,34 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-        Log.e("MobileConnection", "Creating new google api client...");
 
         messages = new LinkedList<>();
 
         if (!mResolvingError) {
-            Log.e("MobileConnection", "Connecting....");
             mGoogleApiClient.connect();
         }
     }
 
-    private void createMessage(String path, String data, MessageCallback callback) {
-        try {
-            WearableMessage message = new WearableMessage();
-            message.path = path;
-            message.callback = callback;
-            message.data = data.getBytes("UTF-8");
-            messages.add(message);
-            flushMessages();
-        } catch (UnsupportedEncodingException e) {
-            Log.e("MobileConnection", "Could not send query: " + e.getLocalizedMessage());
-        }
+    private void createMessage(String path, DataMap data, MessageCallback callback) {
+        WearableMessage message = new WearableMessage();
+        message.path = path;
+        message.callback = callback;
+        message.data = data.toByteArray();
+        messages.add(message);
+        flushMessages();
     }
 
     public void sendQuery(String query, MessageCallback callback) {
-        createMessage("query", query, callback);
+
+        DataMap data = new DataMap();
+        data.putString("query", query);
+        createMessage("query", data, callback);
     }
 
     public void confirmTrack(String uri) {
-        createMessage("confirm_track", uri, null);
+        DataMap data = new DataMap();
+        data.putString("uri", uri);
+        createMessage("confirm_track", data, null);
     }
 
     private void flushMessages() {

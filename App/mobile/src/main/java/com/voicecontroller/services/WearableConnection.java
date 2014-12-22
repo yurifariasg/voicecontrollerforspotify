@@ -44,16 +44,12 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
     public void requestConfirmation(Track track) throws UnsupportedEncodingException {
         Log.i("WearableConnection", "Creating Confirmation....");
 
-        try {
-            WearableMessage message = new WearableMessage();
-            message.path = "confirmation";
-            message.data = track.toJSONString().getBytes("UTF-8");
-            messages.add(message);
+        WearableMessage message = new WearableMessage();
+        message.path = "confirmation";
+        message.data = track.toDataMap().toByteArray();
+        messages.add(message);
 
-            flushMessages();
-        } catch (JSONException e) {
-            Log.e("WearableConnection", "Failed to create JSON String");
-        }
+        flushMessages();
     }
 
     public void flushMessages() {

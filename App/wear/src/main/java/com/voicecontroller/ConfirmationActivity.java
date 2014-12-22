@@ -36,13 +36,12 @@ public class ConfirmationActivity extends Activity
         trackName = getIntent().getStringExtra("trackName");
         artistName = getIntent().getStringExtra("artistName");
         trackUri = getIntent().getStringExtra("trackUri");
-        String encodedImage = getIntent().getStringExtra("image");
+        byte[] imgBytes = getIntent().getByteArrayExtra("image");
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = powerManager.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "VoiceController");
 
-        if (!encodedImage.isEmpty()) {
-            byte[] imgBytes = Base64.decode(encodedImage, Base64.DEFAULT);
+        if (imgBytes.length > 0) {
             image = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
         }
 

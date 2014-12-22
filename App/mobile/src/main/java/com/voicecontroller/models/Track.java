@@ -1,10 +1,6 @@
 package com.voicecontroller.models;
 
-
-import android.util.Base64;
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import com.google.android.gms.wearable.DataMap;
 
 public class Track {
 
@@ -44,19 +40,17 @@ public class Track {
         return getArtist() + " - " + getName();
     }
 
-    public String toJSONString() throws JSONException {
+    public DataMap toDataMap() {
 
-        String imgStr = "";
-        if (image != null) {
-            imgStr = Base64.encodeToString(image, Base64.DEFAULT);
-        }
+        DataMap data = new DataMap();
 
-        JSONObject json = new JSONObject();
-        json.put("artist", getArtist());
-        json.put("name", getName());
-        json.put("image", imgStr);
-        json.put("uri", getUri());
+        data.putString("artist", getArtist());
+        data.putString("name", getName());
+        data.putString("uri", getUri());
+        data.putByteArray("image", image);
 
-        return json.toString();
+        return data;
+
     }
+
 }

@@ -8,12 +8,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 
+import com.crashlytics.android.Crashlytics;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
 import com.voicecontroller.R;
+import com.voicecontroller.Settings;
 import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
@@ -23,6 +24,9 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Settings.ACTIVATE_CRASHLYTICS) {
+            Crashlytics.start(this);
+        }
         setContentView(R.layout.activity_main);
         SpotifyWebAPI.setMainActivity(this);
         findViewById(R.id.playBt).setOnClickListener(this);

@@ -4,39 +4,40 @@ import android.app.KeyguardManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.PowerManager;
-import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
-import com.voicecontroller.R;
 import com.voicecontroller.Settings;
-import com.voicecontroller.models.Track;
-import com.voicecontroller.utils.SpotifyWebAPI;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
 
 public class ListenerFromWear extends WearableListenerService {
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
 
+        if (Settings.ACTIVATE_CRASHLYTICS) {
+            Crashlytics.start(this);
+        }
+
         String nodeId = messageEvent.getSourceNodeId();
         String path = messageEvent.getPath();
 
         try {
-            String data = new String(messageEvent.getData(), "UTF-8");
+            DataMap data = DataMap.fromByteArray(messageEvent.getData());
 
             Log.i("ListenerFromWear", "Received Message from " + nodeId + " with topic " + path);
 
             WearableConnection connection = new WearableConnection(nodeId, this);
 
             if (path.equalsIgnoreCase("query")) {
-                TrackHandler.lookForTrack(data, connection, this);
+                TrackHandler.lookForTrack(data.getString("query"), connection, this);
 
                 if (Settings.START_SPOTIFY_ON_QUERY) {
                     Intent mIntent = getPackageManager().getLaunchIntentForPackage("com.spotify.music");
@@ -52,7 +53,26 @@ public class ListenerFromWear extends WearableListenerService {
 
 
             } else if (path.equalsIgnoreCase("confirm_track")) {
-                onConfirmationReceived(data, connection);
+                onConfirmationReceived(data.getString("uri"), connection);
+            } else if (path.equalsIgnoreCase("wear_error")) {
+                if (Settings.ACTIVATE_CRASHLYTICS) {
+                    DataMap map = DataMap.fromByteArray(messageEvent.getData());
+                    ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
+                    try {
+                        ObjectInputStream ois = new ObjectInputStream(bis);
+                        Throwable ex = (Throwable) ois.readObject();
+
+                        Crashlytics.setBool("wear_exception", true);
+                        Crashlytics.setString("board", map.getString("board"));
+                        Crashlytics.setString("fingerprint", map.getString("fingerprint"));
+                        Crashlytics.setString("model", map.getString("model"));
+                        Crashlytics.setString("manufacturer", map.getString("manufacturer"));
+                        Crashlytics.setString("product", map.getString("product"));
+                        Crashlytics.logException(ex);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
         } catch (Exception e) {

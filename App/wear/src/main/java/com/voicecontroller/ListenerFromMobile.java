@@ -3,10 +3,9 @@ package com.voicecontroller;
 import android.content.Intent;
 import android.util.Log;
 
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
-
-import org.json.JSONObject;
 
 
 public class ListenerFromMobile extends WearableListenerService {
@@ -20,20 +19,17 @@ public class ListenerFromMobile extends WearableListenerService {
         String path = messageEvent.getPath();
 
         try {
-            String data = new String(messageEvent.getData(), "UTF-8");
+            DataMap data = DataMap.fromByteArray(messageEvent.getData());
 
             Log.i("ListenerFromWear", "Received Message from " + nodeId + " with topic " + path);
 
             if (path.equalsIgnoreCase("confirmation")) {
-
-                JSONObject json = new JSONObject(data);
-
                 Intent i = new Intent(this, ConfirmationActivity.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra("trackName", json.getString("name"));
-                i.putExtra("artistName", json.getString("artist"));
-                i.putExtra("image", json.getString("image"));
-                i.putExtra("trackUri", json.getString("uri"));
+                i.putExtra("trackName", data.getString("name"));
+                i.putExtra("artistName", data.getString("artist"));
+                i.putExtra("image", data.getByteArray("image"));
+                i.putExtra("trackUri", data.getString("uri"));
                 startActivity(i);
             }
         } catch (Exception e) {
