@@ -117,21 +117,29 @@ public class SpotifyWebAPI {
                 }
             }
 
-            if (img != null && Settings.BLUR_IMAGES) {
+            if (img != null) {
                 // Blur image
                 Bitmap b = BitmapFactory.decodeByteArray(img, 0, img.length);
-                Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, 300, 300, true);
-                b.recycle();
-                b = scaledBitmap;
+                if (b.getWidth() != 300 || b.getHeight() != 300) {
+                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, 300, 300, true);
+                    b.recycle();
+                    b = scaledBitmap;
+                }
 
-                RenderScript rs = RenderScript.create(context);
-                final Allocation input = Allocation.createFromBitmap(rs, b);
-                final Allocation output = Allocation.createTyped(rs, input.getType());
-                final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-                script.setRadius(8f);
-                script.setInput(input);
-                script.forEach(output);
-                output.copyTo(b);
+                try {
+                    if (Settings.BLUR_IMAGES) {
+                        RenderScript rs = RenderScript.create(context);
+                        final Allocation input = Allocation.createFromBitmap(rs, b);
+                        final Allocation output = Allocation.createTyped(rs, input.getType());
+                        final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+                        script.setRadius(Settings.BLUR);
+                        script.setInput(input);
+                        script.forEach(output);
+                        output.copyTo(b);
+                    }
+                } catch (Exception e) {
+                    Log.e("SpotifyWebAPI", "Exception while processing image: " + e.getLocalizedMessage(), e);
+                }
 
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 b.compress(Bitmap.CompressFormat.PNG, 100, stream);
