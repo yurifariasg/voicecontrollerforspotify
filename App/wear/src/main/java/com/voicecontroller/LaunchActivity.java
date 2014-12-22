@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.wearable.view.WatchViewStub;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,13 +16,19 @@ import com.squareup.picasso.Picasso;
 
 public class LaunchActivity extends Activity implements MessageCallback {
 
+    private static final long MINIMUM_QUERY_TIME_IN_MS = 3000;
+
     private String query;
+
+    private long startTimestamp;
+    private Handler queryFinishHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         MobileConnection.createInstance(this);
+        queryFinishHandler = new Handler();
     }
 
     @Override
@@ -36,28 +44,29 @@ public class LaunchActivity extends Activity implements MessageCallback {
                 ((TextView) stub.findViewById(R.id.queryNameTv)).setText(query);
             }
         });
+        startTimestamp = System.currentTimeMillis();
 
         MobileConnection.getInstance().sendQuery(query, this);
     }
 
     @Override
     public void onMessageSent() {
-//        Intent intent = new Intent(this, android.support.wearable.activity.ConfirmationActivity.class);
-//        intent.putExtra(android.support.wearable.activity.ConfirmationActivity.EXTRA_ANIMATION_TYPE,
-//                android.support.wearable.activity.ConfirmationActivity.SUCCESS_ANIMATION);
-//        intent.putExtra(android.support.wearable.activity.ConfirmationActivity.EXTRA_MESSAGE,
-//                "Query Sent");
-//        startActivity(intent);
-        finish();
+        long nowTimestamp = System.currentTimeMillis();
+        long diff = nowTimestamp - startTimestamp;
+        if (diff > MINIMUM_QUERY_TIME_IN_MS) {
+            finish();
+        } else {
+            queryFinishHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    finish();
+                }
+            }, MINIMUM_QUERY_TIME_IN_MS - diff);
+        }
     }
 
     @Override
     public void onMessageFailed() {
         Toast.makeText(this, "Message Failed...", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
     }
 }

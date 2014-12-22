@@ -3,6 +3,7 @@
     package="com.voicecontroller" >
 
     <uses-feature android:name="android.hardware.type.watch" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <meta-data
         android:name="com.google.android.gms.version"

@@ -11,6 +11,7 @@ import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
 
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
+import com.voicecontroller.Settings;
 import com.voicecontroller.activities.MainActivity;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.oauth.OAuthRecord;
@@ -40,7 +41,7 @@ public class SpotifyWebAPI {
     private static final String SEARCH_API = "search";
     private static final String USER_PROFILE = "/v1/me";
     private static final String DEFAULT_ENCODING = "UTF-8";
-    private static final int MINIMUM_WIDTH = 100;
+    private static final int MINIMUM_WIDTH = 200;
 
     private static OAuthRecord oauthRecord = null;
     private static MainActivity mainActivity = null;
@@ -104,13 +105,37 @@ public class SpotifyWebAPI {
                 if (images.length() > 0) {
 
                     // We expect that the array is sorted.
+                    String imageUrl = "";
                     for (int i = 0 ; i < images.length() ; i++) {
                         if (images.getJSONObject(i).getInt("width") > MINIMUM_WIDTH) {
-                            String imageUrl = images.getJSONObject(i).getString("url");
-                            img = downloadImage(imageUrl);
+                            imageUrl = images.getJSONObject(i).getString("url");
                         }
                     }
+                    if (imageUrl != null && !imageUrl.isEmpty()) {
+                        img = downloadImage(imageUrl);
+                    }
                 }
+            }
+
+            if (img != null && Settings.BLUR_IMAGES) {
+                // Blur image
+                Bitmap b = BitmapFactory.decodeByteArray(img, 0, img.length);
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, 300, 300, true);
+                b.recycle();
+                b = scaledBitmap;
+
+                RenderScript rs = RenderScript.create(context);
+                final Allocation input = Allocation.createFromBitmap(rs, b);
+                final Allocation output = Allocation.createTyped(rs, input.getType());
+                final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+                script.setRadius(8f);
+                script.setInput(input);
+                script.forEach(output);
+                output.copyTo(b);
+
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                b.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                img = stream.toByteArray();
             }
 
             return new Track(id, name, artist, uri, img);

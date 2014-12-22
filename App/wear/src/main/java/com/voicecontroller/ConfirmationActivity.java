@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.support.wearable.view.DelayedConfirmationView;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Base64;
@@ -25,6 +26,8 @@ public class ConfirmationActivity extends Activity
     private Bitmap image = null;
     private boolean trackConfirmed = true;
 
+    private PowerManager.WakeLock mWakeLock;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,6 +37,9 @@ public class ConfirmationActivity extends Activity
         artistName = getIntent().getStringExtra("artistName");
         trackUri = getIntent().getStringExtra("trackUri");
         String encodedImage = getIntent().getStringExtra("image");
+
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        mWakeLock = powerManager.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "VoiceController");
 
         if (!encodedImage.isEmpty()) {
             byte[] imgBytes = Base64.decode(encodedImage, Base64.DEFAULT);
@@ -49,6 +55,8 @@ public class ConfirmationActivity extends Activity
 
                 trackNameTv.setText(trackName);
                 artistNameTv.setText(artistName);
+
+                mWakeLock.acquire();
 
                 mDelayedView = (DelayedConfirmationView) stub.findViewById(R.id.delay_view);
                 mDelayedView.setTotalTimeMs(5000);
@@ -72,17 +80,26 @@ public class ConfirmationActivity extends Activity
             MobileConnection.getInstance().confirmTrack(trackUri);
         }
         finish();
+
+        if (mWakeLock.isHeld()) {
+            mWakeLock.release();
+        }
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         image.recycle();
+        image = null;
+        super.onDestroy();
     }
 
     @Override
     public void onTimerSelected(View view) {
         trackConfirmed = false;
         finish();
+
+        if (mWakeLock.isHeld()) {
+            mWakeLock.release();
+        }
     }
 }

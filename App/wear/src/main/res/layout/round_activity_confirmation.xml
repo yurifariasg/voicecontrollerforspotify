@@ -35,11 +35,11 @@
         android:layout_marginTop="-20dp"
         android:padding="18dp"
         android:src="@drawable/ic_full_cancel"
-        app:circle_border_color="@color/white"
+        app:circle_border_color="@color/spotify_green"
         app:circle_border_width="10dp"
         app:circle_radius="40dp"
         app:circle_radius_pressed="50dp"
-        app:circle_color="@color/blue"
+        app:circle_color="@color/mid_gray"
         app:update_interval="10"/>
 
 </RelativeLayout>
