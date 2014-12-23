@@ -1,9 +1,11 @@
 package com.voicecontroller.utils;
 
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
@@ -11,8 +13,9 @@ import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
 
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
-import com.voicecontroller.Settings;
-import com.voicecontroller.activities.MainActivity;
+import com.voicecontroller.settings.Settings;
+import com.voicecontroller.callbacks.OnProfileAcquired;
+import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
@@ -38,16 +41,11 @@ public class SpotifyWebAPI {
     private static final String REDIRECT_URI = "voice-controller-spotify://callback";
     private static final String BASE_URL = "https://api.spotify.com/v1/";
     private static final String SEARCH_API = "search";
-    private static final String USER_PROFILE = "/v1/me";
+    private static final String USER_PROFILE = "me";
     private static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MINIMUM_WIDTH = 200;
 
     private static OAuthRecord oauthRecord = null;
-    private static MainActivity mainActivity = null;
-
-    public static void setMainActivity(MainActivity mainActivity) {
-        SpotifyWebAPI.mainActivity = mainActivity;
-    }
 
     public static boolean checkOAuth() {
         Log.i("SpotifyWebAPI", "Checking OAuth");
@@ -55,7 +53,7 @@ public class SpotifyWebAPI {
             oauthRecord = OAuthService.getOAuthToken();
             if (oauthRecord != null) {
                 try {
-                    JSONObject userProfile = getUserProfile();
+                    Profile userProfile = getUserProfile(oauthRecord);
                 } catch (Exception e) {
                     Log.w("SpotifyWebAPI", "OAuth Check Failed: " + e.getLocalizedMessage());
                     oauthRecord = null;
@@ -66,21 +64,68 @@ public class SpotifyWebAPI {
         return oauthRecord != null;
     }
 
-    public static void callOAuthWindow() {
+    public static void callOAuthWindow(Activity activity) {
         Log.i("SpotifyWebAPI", "Calling OAuth Window");
         // Initiate new OAuth Request...
         SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
-                new String[]{"user-read-private", "streaming"}, null, mainActivity);
+                new String[]{"user-read-private", "streaming"}, null, activity);
     }
 
-    public static JSONObject getUserProfile() {
+    public static void getProfileAsync(final OAuthRecord oauth, final OnProfileAcquired callback) {
+        new AsyncTask<Void, String, Profile>() {
+
+            @Override
+            protected Profile doInBackground(Void... params) {
+                return getUserProfile(oauth);
+            }
+
+            @Override
+            protected void onPostExecute(Profile profile) {
+                super.onPostExecute(profile);
+                if (profile != null) {
+                    callback.onProfileAcquired(profile);
+                }
+            }
+        }.execute();
+    }
+
+    public static Profile getUserProfile(OAuthRecord oauth) {
+
+        if (oauth == null) {
+            oauth = OAuthService.getOAuthToken();
+        }
+
+        if (oauth != null) {
+
+            try {
+                String response = get(BASE_URL + USER_PROFILE, oauth.token);
+                JSONObject json = new JSONObject(response);
+
+                String name = json.getString("display_name");
+                String imgUrl = null;
+                JSONArray imgs = json.getJSONArray("images");
+                if (imgs.length() > 0) {
+                    imgUrl = imgs.getJSONObject(0).getString("url");
+                }
+
+                Profile p = new Profile();
+                p.name = name;
+                if (imgUrl != null) {
+                    p.setImage(downloadImage(imgUrl));
+                }
+                return p;
+
+            } catch (Exception e) {
+                Log.w("SpotifyWebAPI", "Could not get user profile", e);
+            }
+        }
         return null;
     }
 
     public static Track searchTrack(String trackName, Context context) throws JSONException, IOException {
         String url = BASE_URL + SEARCH_API + "?q=" + URLEncoder.encode(trackName, DEFAULT_ENCODING) +
                 "&type=track";
-        String result = get(url);
+        String result = get(url, null);
 
         JSONObject json = new JSONObject(result);
 
@@ -126,12 +171,13 @@ public class SpotifyWebAPI {
                 }
 
                 try {
-                    if (Settings.BLUR_IMAGES) {
+                    float blur = Settings.getBlur();
+                    if (blur > 0) {
                         RenderScript rs = RenderScript.create(context);
                         final Allocation input = Allocation.createFromBitmap(rs, b);
                         final Allocation output = Allocation.createTyped(rs, input.getType());
                         final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-                        script.setRadius(Settings.BLUR);
+                        script.setRadius(Settings.getBlur());
                         script.setInput(input);
                         script.forEach(output);
                         output.copyTo(b);
@@ -185,10 +231,16 @@ public class SpotifyWebAPI {
         }
     }
 
-    private static String get(String urlStr) throws IOException {
+    private static String get(String urlStr, String auth) throws IOException {
         URL url = new URL(urlStr);
         HttpURLConnection conn =
                 (HttpURLConnection) url.openConnection();
+
+        if (auth != null && !auth.isEmpty()) {
+            conn.setRequestProperty("Authorization", "Bearer " + auth);
+        }
+
+        Log.i("SpotifyWebAPI", "Request to: " + urlStr + " - OAuth: " + (auth == null ? "None" : auth));
 
         if (conn.getResponseCode() != 200) {
             throw new IOException(conn.getResponseMessage());

@@ -24,7 +24,7 @@ public class TrackHandler {
     }
 
     public static void playTrack(String trackUri, WearableConnection connection, Context context) {
-        Intent intent = new Intent( Intent.ACTION_MAIN, Uri.parse(trackUri) );
+        Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse(trackUri) );
         intent.setFlags((Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_FROM_BACKGROUND));
         context.startActivity(intent);
         Log.i("TrackHandler", "Sending tune to Spotify.");

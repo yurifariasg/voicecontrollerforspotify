@@ -13,7 +13,7 @@ import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
-import com.voicecontroller.Settings;
+import com.voicecontroller.settings.Settings;
 import com.voicecontroller.nativeplayer.NativePlayer;
 
 import java.io.ByteArrayInputStream;
@@ -86,7 +86,7 @@ public class ListenerFromWear extends WearableListenerService {
 
     private void onConfirmationReceived(String trackUri, WearableConnection connection) {
 
-        if (Settings.USE_NATIVE_PLAYER) {
+        if (Settings.shouldUseNativePlayer()) {
 
             Intent i = new Intent(this, NativePlayer.class);
             i.putExtra("uri", trackUri);
