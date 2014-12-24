@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.crashlytics.android.Crashlytics;
+import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
@@ -52,17 +53,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private void initializeScreen() {
         OAuthRecord record = OAuthService.getOAuthToken();
         if (record != null && record.isValid()) {
-            // We Should have a profile, otherwise try to get one.
-            Profile p = Select.from(Profile.class).first();
-
-            if (p != null) {
-
-                ProfileFragment fragment = ProfileFragment.newInstance(p);
-                switchTo(fragment);
-
-            } else {
-                SpotifyWebAPI.getProfileAsync(OAuthService.getOAuthToken(), this);
-            }
+            SpotifyWebAPI.getProfileAsync(record, this);
+        } else if (record != null) {
+            SpotifyWebAPI.refreshOAuth(record, this);
         } else {
             LoginFragment fragment = LoginFragment.newInstance();
             switchTo(fragment);
@@ -73,7 +66,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public void onProfileAcquired(Profile profile) {
         ProfileFragment fragment = ProfileFragment.newInstance(profile);
         switchTo(fragment);
-        profile.save();
+        if (profile.getId() == null) {
+            profile.save();
+        }
     }
 
     @Override
@@ -136,9 +131,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         super.onNewIntent(intent);
         Uri uri = intent.getData();
         if (uri != null) {
-            AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri);
-            OAuthService.setOAuthToken(response);
-            SpotifyWebAPI.getProfileAsync(OAuthService.getOAuthToken(), this);
+            SpotifyWebAPI.onOAuthCallback(uri, this);
         }
     }
 

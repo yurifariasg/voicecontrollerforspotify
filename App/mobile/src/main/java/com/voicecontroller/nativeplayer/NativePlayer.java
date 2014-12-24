@@ -21,6 +21,7 @@ import com.spotify.sdk.android.playback.Player;
 import com.spotify.sdk.android.playback.PlayerNotificationCallback;
 import com.spotify.sdk.android.playback.PlayerState;
 import com.voicecontroller.R;
+import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
@@ -31,7 +32,8 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 
-public class NativePlayer extends Service implements PlayerNotificationCallback, ConnectionStateCallback, Player.InitializationObserver {
+public class NativePlayer extends Service implements PlayerNotificationCallback,
+        ConnectionStateCallback, Player.InitializationObserver, OnOAuthTokenRefreshed {
 
     public static final int NOTIFICATION_ID = 1;
     public static final int PLAY = 1;
@@ -202,11 +204,12 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 if (mPlayer == null || !mPlayer.isInitialized() || mPlayer.isShutdown()) {
                     Log.i("NativePlayer", "Initializing player...");
                     OAuthRecord record = OAuthService.getOAuthToken();
-                    if (record != null && record.isValid()) {
-                        String token = record.token;
-                        Config playerConfig = new Config(this, token, SpotifyWebAPI.CLIENT_ID);
-                        Spotify spotify = new Spotify();
-                        mPlayer = spotify.getPlayer(playerConfig, this, this);
+                    if (record != null) {
+                        if (!record.isValid()) {
+                            SpotifyWebAPI.refreshOAuth(record, this);
+                        } else {
+                            initializePlayerWithToken(record);
+                        }
                     } else {
                         Log.w("NativePlayer", "No valid record found.");
                     }
@@ -218,6 +221,24 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
         return super.onStartCommand(intent, flags, startId);
     }
+
+    @Override
+    public void onOAuthTokenRefreshed(OAuthRecord record) {
+        if (record.isValid()) {
+            initializePlayerWithToken(record);
+        } else {
+            Log.w("NativePlayer", "Token refresh failed... can't initialize player...");
+        }
+    }
+
+    private void initializePlayerWithToken(OAuthRecord record) {
+        // No verifications with token are done here...
+        String token = record.access_token;
+        Config playerConfig = new Config(this, token, SpotifyWebAPI.CLIENT_ID);
+        Spotify spotify = new Spotify();
+        mPlayer = spotify.getPlayer(playerConfig, this, this);
+    }
+
 
     public void pause() {
         if (mPlayer != null && mPlayer.isInitialized()) {
@@ -271,7 +292,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         if (eventType.equals(EventType.LOST_PERMISSION) || eventType.equals(EventType.END_OF_CONTEXT)) {
             stopNotification();
             mySession.setActive(false);
-        } else if (eventType.equals(EventType.AUDIO_FLUSH)) {
+        } else if (eventType.equals(EventType.TRACK_START)) {
             mySession.setActive(true);
         }
     }
