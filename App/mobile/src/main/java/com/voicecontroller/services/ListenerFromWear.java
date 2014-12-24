@@ -1,30 +1,32 @@
 package com.voicecontroller.services;
 
 import android.app.KeyguardManager;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
+import com.voicecontroller.models.Track;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.nativeplayer.NativePlayer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.util.HashMap;
 
 public class ListenerFromWear extends WearableListenerService {
+
+    private static HashMap<String, Track> tracks = new HashMap<String, Track>();
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
 
-        if (Settings.ACTIVATE_CRASHLYTICS) {
+        if (Settings.ENABLE_CRASHLYTICS) {
             Crashlytics.start(this);
         }
 
@@ -39,25 +41,13 @@ public class ListenerFromWear extends WearableListenerService {
             WearableConnection connection = new WearableConnection(nodeId, this);
 
             if (path.equalsIgnoreCase("query")) {
-                TrackHandler.lookForTrack(data.getString("query"), connection, this);
-
-                if (Settings.START_SPOTIFY_ON_QUERY) {
-                    Intent mIntent = getPackageManager().getLaunchIntentForPackage("com.spotify.music");
-                    if (mIntent != null) {
-                        try {
-                            startActivity(mIntent);
-                        } catch (ActivityNotFoundException err) {
-                            Toast t = Toast.makeText(getApplicationContext(), "App not found", Toast.LENGTH_SHORT);
-                            t.show();
-                        }
-                    }
-                }
-
-
+                Track track = TrackHandler.lookForTrack(data.getString("query"), connection, this);
+                // Add track to map
+                tracks.put(track.getUri(), track);
             } else if (path.equalsIgnoreCase("confirm_track")) {
                 onConfirmationReceived(data.getString("uri"), connection);
             } else if (path.equalsIgnoreCase("wear_error")) {
-                if (Settings.ACTIVATE_CRASHLYTICS) {
+                if (Settings.ENABLE_CRASHLYTICS) {
                     DataMap map = DataMap.fromByteArray(messageEvent.getData());
                     ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
                     try {
@@ -80,17 +70,20 @@ public class ListenerFromWear extends WearableListenerService {
         } catch (Exception e) {
             Log.e("ListenerFromWear", e.getLocalizedMessage());
         }
-
-
     }
 
     private void onConfirmationReceived(String trackUri, WearableConnection connection) {
 
         if (Settings.shouldUseNativePlayer()) {
-
-            Intent i = new Intent(this, NativePlayer.class);
-            i.putExtra("uri", trackUri);
-            startService(i);
+            Track track = tracks.get(trackUri);
+            if (track != null) {
+                Intent i = new Intent(this, NativePlayer.class);
+                i.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+                i.putExtra("track", track.toBundle());
+                startService(i);
+            } else {
+                Log.w("ListenerFromWear", "Could not find track on track map.");
+            }
 
         } else {
             PowerManager.WakeLock wl = null;

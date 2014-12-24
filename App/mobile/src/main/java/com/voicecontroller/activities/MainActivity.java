@@ -35,7 +35,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Settings.ACTIVATE_CRASHLYTICS) {
+        if (Settings.ENABLE_CRASHLYTICS) {
             Crashlytics.start(this);
         }
 

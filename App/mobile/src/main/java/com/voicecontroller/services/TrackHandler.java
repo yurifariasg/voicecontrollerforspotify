@@ -6,21 +6,33 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.voicecontroller.models.Track;
+import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
 
 public class TrackHandler {
 
-    public static void lookForTrack(String queryName, WearableConnection connection, Context context) {
+    public static Track lookForTrack(String queryName, WearableConnection connection, Context context) {
 
         try {
-            Track track = SpotifyWebAPI.searchTrack(queryName, context);
-            connection.requestConfirmation(track);
+
+            Track track = null;
+            int retries = 0;
+            while (track == null && retries < Settings.SEARCH_TRACK_MAXIMUM_RETRIES) {
+                track = SpotifyWebAPI.searchTrack(queryName, context);
+                retries++;
+            }
+
+            if (track != null) {
+                connection.requestConfirmation(track);
+            }
+            return track;
 
         } catch (Exception exception) {
             Log.w("TrackHandler", "Failed to Search Track: " + exception.getLocalizedMessage());
             connection.errorOccurred();
         }
+        return null;
     }
 
     public static void playTrack(String trackUri, WearableConnection connection, Context context) {

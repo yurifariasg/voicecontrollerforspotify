@@ -23,10 +23,10 @@ public class Settings {
     // These are real constants
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
-    public static boolean ACTIVATE_CRASHLYTICS = false;
-    public static boolean START_SPOTIFY_ON_QUERY = false;
+    public static boolean ENABLE_CRASHLYTICS = false;
     public static boolean USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY = false;
     public static boolean USE_KEYGUARD_ON_SENDING_TRACK_TO_SPOTIFY = false;
+    public static int SEARCH_TRACK_MAXIMUM_RETRIES = 5;
 
     public static float getBlur() {
         Setting s = Select.from(Setting.class).where(Condition.prop("settingid").eq(ID.BLUR_IMAGES.val())).first();
