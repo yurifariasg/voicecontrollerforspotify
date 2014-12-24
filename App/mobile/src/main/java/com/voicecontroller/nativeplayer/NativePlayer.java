@@ -135,7 +135,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 .build());
 
         Notification.Builder builder = new Notification.Builder(this)
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_music)
                 .setContentTitle(tracks.peek().getName())
                 .setContentText(tracks.peek().getArtist())
                 .setLargeIcon(artwork)
