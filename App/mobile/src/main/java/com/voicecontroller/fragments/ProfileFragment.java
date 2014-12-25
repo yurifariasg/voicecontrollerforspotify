@@ -64,17 +64,19 @@ public class ProfileFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v =  inflater.inflate(R.layout.fragment_profile, container, false);
+        v.findViewById(R.id.logoutBt).setOnClickListener(mListener);
 
-        if (name != null && !name.isEmpty() && image != null && image.length > 0) {
+        if (name != null && !name.isEmpty()) {
             ((TextView) v.findViewById(R.id.userNameTv)).setText(name);
+        }
+
+        if (image != null && image.length > 0) {
             ImageView profileIv = (ImageView) v.findViewById(R.id.profileIv);
 
             Bitmap profilePicture = BitmapFactory.decodeByteArray(image, 0, image.length);
             if (profilePicture != null) {
                 profileIv.setImageDrawable(new BitmapDrawable(getResources(), profilePicture));
             }
-
-            v.findViewById(R.id.logoutBt).setOnClickListener(mListener);
         }
         return v;
     }

@@ -69,6 +69,7 @@ public class ListenerFromWear extends WearableListenerService {
 
         } catch (Exception e) {
             Log.e("ListenerFromWear", e.getLocalizedMessage());
+            Crashlytics.logException(e);
         }
     }
 

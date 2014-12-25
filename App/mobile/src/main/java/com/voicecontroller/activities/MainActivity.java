@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
 import com.orm.query.Condition;
@@ -64,10 +65,17 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     @Override
     public void onProfileAcquired(Profile profile) {
-        ProfileFragment fragment = ProfileFragment.newInstance(profile);
-        switchTo(fragment);
-        if (profile.getId() == null) {
-            profile.save();
+        if (profile.product == null || !profile.product.equalsIgnoreCase("premium")) {
+            Toast.makeText(this, getString(R.string.not_premium_account), Toast.LENGTH_LONG).show();
+            OAuthRecord.deleteAll(OAuthRecord.class);
+            LoginFragment fragment = LoginFragment.newInstance();
+            switchTo(fragment);
+        } else {
+            ProfileFragment fragment = ProfileFragment.newInstance(profile);
+            switchTo(fragment);
+            if (profile.getId() == null) {
+                profile.save();
+            }
         }
     }
 

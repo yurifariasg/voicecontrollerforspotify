@@ -13,7 +13,9 @@ import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
 import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.spotify.sdk.android.Spotify;
@@ -217,6 +219,11 @@ public class SpotifyWebAPI {
                     JSONObject json = new JSONObject(response);
 
                     String name = json.getString("display_name");
+                    if (name == null || json.isNull("display_name")) {
+                        name = json.getString("id");
+                    }
+                    String product = json.getString("product");
+
                     String imgUrl = null;
                     JSONArray imgs = json.getJSONArray("images");
                     if (imgs.length() > 0) {
@@ -226,10 +233,10 @@ public class SpotifyWebAPI {
                     p = new Profile();
                     p.name = name;
                     p.oauth = oauth;
+                    p.product = product;
                     if (imgUrl != null) {
                         p.setImage(downloadImage(imgUrl));
                     }
-
                 } catch (Exception e) {
                     Log.w("SpotifyWebAPI", "Could not get user profile", e);
                 }
@@ -278,6 +285,8 @@ public class SpotifyWebAPI {
                 }
             }
 
+            byte[] blurredImage = null;
+
             if (img != null) {
                 // Blur image
                 Bitmap b = BitmapFactory.decodeByteArray(img, 0, img.length);
@@ -301,14 +310,15 @@ public class SpotifyWebAPI {
                     }
                 } catch (Exception e) {
                     Log.e("SpotifyWebAPI", "Exception while processing image: " + e.getLocalizedMessage(), e);
+                    Crashlytics.logException(e);
                 }
 
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 b.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                img = stream.toByteArray();
+                blurredImage = stream.toByteArray();
             }
 
-            return new Track(id, name, artist, uri, img);
+            return new Track(id, name, artist, uri, img, blurredImage);
         } else {
             return null;
         }

@@ -8,10 +8,12 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Wearable;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.models.WearableMessage;
+import com.voicecontroller.settings.Settings;
 
 import org.json.JSONException;
 
@@ -46,7 +48,11 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
 
         WearableMessage message = new WearableMessage();
         message.path = "confirmation";
-        message.data = track.toDataMap().toByteArray();
+
+        DataMap trackMap = track.toDataMap();
+        trackMap.putInt("confirmation_time", Settings.getConfirmationTime());
+
+        message.data = trackMap.toByteArray();
         messages.add(message);
 
         flushMessages();
@@ -65,10 +71,10 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
                             @Override
                             public void onResult(MessageApi.SendMessageResult sendMessageResult) {
                                 if (!sendMessageResult.getStatus().isSuccess()) {
-                                    Log.e("TAG", "Failed to send message with status code: "
+                                    Log.w("WearableConnection", "Failed to send message with status code: "
                                             + sendMessageResult.getStatus().getStatusCode());
                                 } else {
-                                    Log.i("sendMessage", "Callback Success!!");
+                                    Log.i("WearableConnection", "Callback Success!!");
                                 }
                             }
                         }

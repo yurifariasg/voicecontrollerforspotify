@@ -20,20 +20,17 @@ import java.util.Map;
  */
 public class SettingContent {
 
-    /**
-     * An array of sample (dummy) items.
-     */
     public static List<SettingItem> ITEMS = new ArrayList<>();
 
     /**
-     * A map of sample (dummy) items, by ID.
+     * A map of confirmations to show on fragment.
      */
     public static SparseArray<SettingItem> ITEM_MAP = new SparseArray<>();
 
     static {
-        // Add 3 sample items.
         addItem(new SettingItem(Settings.ID.USE_NATIVE_PLAYER, "Use native player", "(EXPERIMENTAL) Native player is more reliable than Spotify App.", new String[] {"YES", "NO"}));
         addItem(new SettingItem(Settings.ID.BLUR_IMAGES, "Blur album images", "Increase or reduce the blur on album artwork.", new String[] {"8", "14", "0", "4"}));
+        addItem(new SettingItem(Settings.ID.CONFIRMATION_TIME, "Confirmation time", "The amount of seconds that the confirmation dialog should have.", new String[] {"4", "5", "6", "7", "2", "3"}));
     }
 
     public static List<SettingItem> getItems() {
@@ -74,7 +71,7 @@ public class SettingContent {
     }
 
     /**
-     * A dummy item representing a piece of content.
+     * The settings item to show on fragment.
      */
     public static class SettingItem {
         public Settings.ID id;

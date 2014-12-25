@@ -37,11 +37,12 @@ public class ConfirmationActivity extends Activity
         artistName = getIntent().getStringExtra("artistName");
         trackUri = getIntent().getStringExtra("trackUri");
         byte[] imgBytes = getIntent().getByteArrayExtra("image");
+        final int confirmationTime = getIntent().getIntExtra("confirmation_time", 4); // Default
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = powerManager.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "VoiceController");
 
-        if (imgBytes.length > 0) {
+        if (imgBytes != null && imgBytes.length > 0) {
             image = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
         }
 
@@ -58,7 +59,7 @@ public class ConfirmationActivity extends Activity
                 mWakeLock.acquire();
 
                 mDelayedView = (DelayedConfirmationView) stub.findViewById(R.id.delay_view);
-                mDelayedView.setTotalTimeMs(5000);
+                mDelayedView.setTotalTimeMs(confirmationTime * 1000);
                 mDelayedView.setListener(getActivity());
                 mDelayedView.start();
 

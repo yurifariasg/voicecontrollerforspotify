@@ -11,6 +11,7 @@ public class Track {
     private String name;
     private String artist;
     private byte[] image;
+    private byte[] blurredImage;
 
     public static Track fromBundle(Bundle b) {
         if (b == null) {
@@ -21,12 +22,17 @@ public class Track {
         }
     }
 
-    public Track(String id, String name, String artist, String uri, byte[] imageBytes) {
+    public Track(String id, String name, String artist, String uri, byte[] imageBytes, byte[] blurredImage) {
         this.id = id;
         this.name = name;
         this.artist = artist;
         this.uri = uri;
         this.image = imageBytes;
+        this.blurredImage = blurredImage;
+    }
+
+    public Track(String id, String name, String artist, String uri, byte[] imageBytes) {
+        this(id, name, artist, uri, imageBytes, null);
     }
 
     public String getUri() {
@@ -58,6 +64,9 @@ public class Track {
         data.putString("name", getName());
         data.putString("uri", getUri());
         data.putByteArray("image", image);
+        if (blurredImage != null) {
+            data.putByteArray("image_blurred", blurredImage);
+        }
         return data;
     }
 
@@ -68,6 +77,9 @@ public class Track {
         b.putString("name", getName());
         b.putString("uri", getUri());
         b.putByteArray("image", image);
+        if (blurredImage != null) {
+            b.putByteArray("blurred_image", blurredImage);
+        }
         return b;
     }
 

@@ -14,6 +14,8 @@ import android.media.session.PlaybackState;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.playback.Config;
 import com.spotify.sdk.android.playback.ConnectionStateCallback;
@@ -30,6 +32,7 @@ import com.voicecontroller.utils.SpotifyWebAPI;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 
 public class NativePlayer extends Service implements PlayerNotificationCallback,
@@ -90,10 +93,18 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onDestroy() {
+        Log.i("NativePlayer", "Shutting down...");
         if (mPlayer != null && !mPlayer.isShutdown()) {
             mPlayer.shutdown();
+            Spotify.destroyPlayer(this);
+            try {
+                mPlayer.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                Log.w("NativePlayer", "Raised exceptiong when awaiting termination...", e);
+            }
+            mPlayer = null;
         }
-        mySession.setActive(false);
+        stopNotification();
         mySession.release();
         super.onDestroy();
     }
@@ -153,13 +164,13 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
         Notification noti = builder.build();
 
-        PlaybackState state = new PlaybackState.Builder()
-                .setActions(
-                        PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PLAY_PAUSE |
+        PlaybackState.Builder stateBuilder = new PlaybackState.Builder()
+                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PLAY_PAUSE |
                                 PlaybackState.ACTION_PAUSE)
-                .setState(PlaybackState.STATE_PLAYING, 0, 1, SystemClock.elapsedRealtime())
-                .build();
-        mySession.setPlaybackState(state);
+                .setState(state, 0, 1, SystemClock.elapsedRealtime());
+
+        PlaybackState pbackState = stateBuilder.build();
+        mySession.setPlaybackState(pbackState);
 
         startForeground(NOTIFICATION_ID, noti);
     }
@@ -202,7 +213,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
                 // Initialization.
                 if (mPlayer == null || !mPlayer.isInitialized() || mPlayer.isShutdown()) {
-                    Log.i("NativePlayer", "Initializing player...");
                     OAuthRecord record = OAuthService.getOAuthToken();
                     if (record != null) {
                         if (!record.isValid()) {
@@ -232,6 +242,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     private void initializePlayerWithToken(OAuthRecord record) {
+        Log.i("NativePlayer", "Initializing player...");
         // No verifications with token are done here...
         String token = record.access_token;
         Config playerConfig = new Config(this, token, SpotifyWebAPI.CLIENT_ID);
@@ -273,14 +284,12 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     public void close() {
-        stopNotification();
-        if (mPlayer != null && !mPlayer.isShutdown()) {
-            mPlayer.shutdown();
-        }
+        stopSelf();
     }
 
     @Override
     public void onInitialized() {
+        Log.i("NativePlayer", "onInitialized");
         mPlayer.addConnectionStateCallback(this);
         mPlayer.addPlayerNotificationCallback(this);
         play();
@@ -306,6 +315,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     @Override
     public void onError(Throwable throwable) {
         Log.e("NativePlayer", "onError Spotify Initialization Error", throwable);
+        Crashlytics.logException(throwable);
         close();
     }
 
@@ -322,11 +332,12 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     @Override
     public void onLoginFailed(Throwable throwable) {
         Log.e("NativePlayer", "SpotifySDK Connection: onLoginFailed", throwable);
+        Crashlytics.logException(throwable);
     }
 
     @Override
     public void onTemporaryError() {
-        Log.e("NativePlayer", "SpotifySDK Connection: onTemporaryError");
+        Log.w("NativePlayer", "SpotifySDK Connection: onTemporaryError");
     }
 
     @Override

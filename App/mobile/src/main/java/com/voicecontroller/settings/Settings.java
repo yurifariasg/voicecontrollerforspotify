@@ -8,7 +8,8 @@ public class Settings {
 
     public enum ID {
         USE_NATIVE_PLAYER(0),
-        BLUR_IMAGES(1);
+        BLUR_IMAGES(1),
+        CONFIRMATION_TIME(2);
 
         private int id;
         ID(int id){
@@ -35,6 +36,16 @@ public class Settings {
             return Integer.parseInt(val);
         } else {
             return 8f; // Default.
+        }
+    }
+
+    public static int getConfirmationTime() {
+        Setting s = Select.from(Setting.class).where(Condition.prop("settingid").eq(ID.CONFIRMATION_TIME.val())).first();
+        if (s != null) {
+            String val = SettingContent.getItems().get(s.settingid).options[s.val];
+            return Integer.parseInt(val);
+        } else {
+            return 4; // Default.
         }
     }
 

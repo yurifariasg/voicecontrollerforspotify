@@ -4,14 +4,11 @@
     android:orientation="vertical"
     tools:context="com.voicecontroller.fragments.ProfileFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-
     <com.voicecontroller.views.RoundImageView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/profileIv"
         android:layout_gravity="center"
-        android:layout_alignParentTop="true"
         android:src="@drawable/profile"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true"
@@ -21,7 +18,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Logged in as"
+        android:text="@string/logged_in_as"
         android:textSize="20sp"
         android:id="@+id/loggedInTv"
         android:layout_gravity="start" />
@@ -29,7 +26,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Jamie Barret"
+        android:text=""
         android:textSize="40sp"
         android:id="@+id/userNameTv"
         android:layout_marginTop="5dp"
@@ -39,7 +36,7 @@
     <Button
         android:layout_width="180dp"
         android:layout_height="wrap_content"
-        android:text="Logout"
+        android:text="@string/logout"
         android:id="@+id/logoutBt"
         android:layout_gravity="center_horizontal" />
 

@@ -28,8 +28,9 @@ public class ListenerFromMobile extends WearableListenerService {
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 i.putExtra("trackName", data.getString("name"));
                 i.putExtra("artistName", data.getString("artist"));
-                i.putExtra("image", data.getByteArray("image"));
+                i.putExtra("image", data.getByteArray("image_blurred"));
                 i.putExtra("trackUri", data.getString("uri"));
+                i.putExtra("confirmation_time", data.getInt("confirmation_time"));
                 startActivity(i);
             }
         } catch (Exception e) {
