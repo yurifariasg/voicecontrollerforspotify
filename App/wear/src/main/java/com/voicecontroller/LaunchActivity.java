@@ -2,16 +2,11 @@ package com.voicecontroller;
 
 import android.app.Activity;
 import android.app.SearchManager;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.wearable.view.WatchViewStub;
-import android.util.Log;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.squareup.picasso.Picasso;
 
 
 public class LaunchActivity extends Activity implements MessageCallback {

@@ -6,5 +6,15 @@
     <string name="logged_in_as">Logged in as</string>
     <string name="logout">Logout</string>
     <string name="not_premium_account">Sorry, we only support Spotify Premium accounts.</string>
+    <string name="could_not_play_title">Could not play song.</string>
+    <string name="login_to_play_songs">Your must be logged in to be able to play songs on native player.</string>
+    <string name="use_native_player">Use native player</string>
+    <string name="use_native_player_desc">(BETA) Native player is more reliable than Spotify App when it is not initialized.</string>
+    <string name="yes">YES</string>
+    <string name="no">NO</string>
+    <string name="blur_images">Blur album images</string>
+    <string name="blur_images_desc">Increase or reduce the blur on album artwork.</string>
+    <string name="confirmation_time">Confirmation time</string>
+    <string name="confirmation_time_desc">The amount of seconds that the confirmation dialog should have.</string>
 
 </resources>

@@ -28,9 +28,14 @@ public class SettingsAdapter extends ArrayAdapter<SettingContent.SettingItem> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.setting_view, parent, false);
         }
 
-        ((TextView)convertView.findViewById(R.id.settingNameTv)).setText(setting.name);
-        ((TextView)convertView.findViewById(R.id.settingDescriptionTv)).setText(setting.description);
-        ((TextView)convertView.findViewById(R.id.settingValueTv)).setText(setting.options[setting.value]);
+        ((TextView)convertView.findViewById(R.id.settingNameTv)).setText(getContext().getString(setting.nameResId));
+        ((TextView)convertView.findViewById(R.id.settingDescriptionTv)).setText(getContext().getString(setting.descriptionResId));
+
+        if (setting.optionsResId == null) {
+            ((TextView) convertView.findViewById(R.id.settingValueTv)).setText(setting.options[setting.value]);
+        } else {
+            ((TextView) convertView.findViewById(R.id.settingValueTv)).setText(getContext().getString(setting.optionsResId[setting.value]));
+        }
 
         return convertView;
     }

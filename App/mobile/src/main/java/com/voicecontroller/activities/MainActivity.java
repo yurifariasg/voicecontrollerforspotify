@@ -13,10 +13,6 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
-import com.orm.query.Condition;
-import com.orm.query.Select;
-import com.spotify.sdk.android.authentication.AuthenticationResponse;
-import com.spotify.sdk.android.authentication.SpotifyAuthentication;
 import com.voicecontroller.R;
 import com.voicecontroller.fragments.SettingsFragment;
 import com.voicecontroller.settings.Settings;

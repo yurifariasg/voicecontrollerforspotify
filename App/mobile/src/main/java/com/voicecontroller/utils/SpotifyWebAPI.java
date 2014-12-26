@@ -11,14 +11,11 @@ import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
-import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
 import com.orm.query.Condition;
 import com.orm.query.Select;
-import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
 import com.voicecontroller.settings.Settings;
@@ -54,24 +51,6 @@ public class SpotifyWebAPI {
     private static final String USER_PROFILE = "me";
     private static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MINIMUM_WIDTH = 200;
-
-    private static OAuthRecord oauthRecord = null;
-
-    public static boolean checkOAuth() {
-        Log.i("SpotifyWebAPI", "Checking OAuth");
-        if (oauthRecord == null || oauthRecord.expiration < System.currentTimeMillis() / 1000) {
-            oauthRecord = OAuthService.getOAuthToken();
-            if (oauthRecord != null) {
-                try {
-                    Profile userProfile = getUserProfile(oauthRecord);
-                } catch (Exception e) {
-                    Log.w("SpotifyWebAPI", "OAuth Check Failed: " + e.getLocalizedMessage());
-                    oauthRecord = null;
-                }
-            }
-        }
-        return oauthRecord != null;
-    }
 
     public static void refreshOAuth(OAuthRecord record, final OnOAuthTokenRefreshed callback) {
         new AsyncTask<OAuthRecord, OAuthRecord, OAuthRecord>() {

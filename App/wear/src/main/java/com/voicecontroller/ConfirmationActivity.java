@@ -7,13 +7,10 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.wearable.view.DelayedConfirmationView;
 import android.support.wearable.view.WatchViewStub;
-import android.util.Base64;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.squareup.picasso.Picasso;
 
 public class ConfirmationActivity extends Activity
         implements DelayedConfirmationView.DelayedConfirmationListener{

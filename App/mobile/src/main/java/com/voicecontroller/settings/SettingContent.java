@@ -5,6 +5,7 @@ import android.util.SparseArray;
 import com.google.android.gms.internal.id;
 import com.orm.query.Condition;
 import com.orm.query.Select;
+import com.voicecontroller.R;
 import com.voicecontroller.settings.Setting;
 import com.voicecontroller.settings.Settings;
 
@@ -28,9 +29,9 @@ public class SettingContent {
     public static SparseArray<SettingItem> ITEM_MAP = new SparseArray<>();
 
     static {
-        addItem(new SettingItem(Settings.ID.USE_NATIVE_PLAYER, "Use native player", "(EXPERIMENTAL) Native player is more reliable than Spotify App.", new String[] {"YES", "NO"}));
-        addItem(new SettingItem(Settings.ID.BLUR_IMAGES, "Blur album images", "Increase or reduce the blur on album artwork.", new String[] {"8", "14", "0", "4"}));
-        addItem(new SettingItem(Settings.ID.CONFIRMATION_TIME, "Confirmation time", "The amount of seconds that the confirmation dialog should have.", new String[] {"4", "5", "6", "7", "2", "3"}));
+        addItem(new SettingItem(Settings.ID.USE_NATIVE_PLAYER, R.string.use_native_player, R.string.use_native_player_desc, new int[] {R.string.yes, R.string.no}));
+        addItem(new SettingItem(Settings.ID.BLUR_IMAGES, R.string.blur_images, R.string.blur_images_desc, new String[] {"8", "14", "0", "4"}));
+        addItem(new SettingItem(Settings.ID.CONFIRMATION_TIME, R.string.confirmation_time, R.string.confirmation_time_desc, new String[] {"4", "5", "6", "7", "2", "3"}));
     }
 
     public static List<SettingItem> getItems() {
@@ -75,22 +76,27 @@ public class SettingContent {
      */
     public static class SettingItem {
         public Settings.ID id;
-        public String name;
-        public String description;
+        public int nameResId;
+        public int descriptionResId;
         public int value;
+        public int[] optionsResId = null;
         public String[] options;
 
-        public SettingItem(Settings.ID id, String name, String description, String[] options) {
+        public SettingItem(Settings.ID id, int nameResId, int descriptionResId, int[] optionsResId) {
             this.id = id;
-            this.name = name;
-            this.description = description;
+            this.nameResId = nameResId;
+            this.descriptionResId = descriptionResId;
+            this.value = 0;
+            this.optionsResId = optionsResId;
+        }
+
+        public SettingItem(Settings.ID id, int nameResId, int descriptionResId, String[] options) {
+            this.id = id;
+            this.nameResId = nameResId;
+            this.descriptionResId = descriptionResId;
             this.value = 0;
             this.options = options;
         }
 
-        @Override
-        public String toString() {
-            return name;
-        }
     }
 }

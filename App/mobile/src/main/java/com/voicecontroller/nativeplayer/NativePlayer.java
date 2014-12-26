@@ -13,6 +13,8 @@ import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
@@ -23,6 +25,7 @@ import com.spotify.sdk.android.playback.Player;
 import com.spotify.sdk.android.playback.PlayerNotificationCallback;
 import com.spotify.sdk.android.playback.PlayerState;
 import com.voicecontroller.R;
+import com.voicecontroller.activities.MainActivity;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.oauth.OAuthRecord;
@@ -39,6 +42,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         ConnectionStateCallback, Player.InitializationObserver, OnOAuthTokenRefreshed {
 
     public static final int NOTIFICATION_ID = 1;
+    public static final int ERROR_NOTIFICATION_ID = 2;
     public static final int PLAY = 1;
     public static final int PAUSE = 2;
     public static final int NEXT = 3;
@@ -222,6 +226,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                         }
                     } else {
                         Log.w("NativePlayer", "No valid record found.");
+                        createOAuthErrorNotification();
                     }
                 } else {
                     playNext();
@@ -238,7 +243,31 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             initializePlayerWithToken(record);
         } else {
             Log.w("NativePlayer", "Token refresh failed... can't initialize player...");
+            createOAuthErrorNotification();
         }
+    }
+
+    private void createOAuthErrorNotification() {
+        Log.i("NativePlayer", "Creating error notification...");
+        // Build intent for notification content
+        Intent viewIntent = new Intent(this, MainActivity.class);
+        PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
+
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.ic_stat_music)
+                        .setContentTitle(getString(R.string.could_not_play_title))
+                        .setContentText(getString(R.string.login_to_play_songs))
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(getString(R.string.login_to_play_songs)))
+                        .setContentIntent(viewPendingIntent);
+
+        // Get an instance of the NotificationManager service
+        NotificationManagerCompat notificationManager =
+                NotificationManagerCompat.from(this);
+
+        // Build the notification and issues it with notification manager.
+        notificationManager.notify(ERROR_NOTIFICATION_ID, notificationBuilder.build());
     }
 
     private void initializePlayerWithToken(OAuthRecord record) {

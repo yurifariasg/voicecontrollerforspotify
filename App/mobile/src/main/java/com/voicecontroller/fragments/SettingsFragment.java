@@ -58,8 +58,15 @@ public class SettingsFragment extends ListFragment {
     public void onListItemClick(ListView l, View v, int position, long id) {
         SettingContent.SettingItem settingSelected = (SettingContent.SettingItem) getListView().getItemAtPosition(position);
         settingSelected.value++;
-        if (settingSelected.value >= settingSelected.options.length) {
-            settingSelected.value = 0;
+
+        if (settingSelected.optionsResId == null) {
+            if (settingSelected.value >= settingSelected.options.length) {
+                settingSelected.value = 0;
+            }
+        } else {
+            if (settingSelected.value >= settingSelected.optionsResId.length) {
+                settingSelected.value = 0;
+            }
         }
 
         SettingContent.saveValuesToDatabase();
