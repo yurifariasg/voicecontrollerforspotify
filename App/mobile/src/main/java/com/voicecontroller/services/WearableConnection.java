@@ -44,8 +44,6 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
     }
 
     public void requestConfirmation(Track track) throws UnsupportedEncodingException {
-        Log.i("WearableConnection", "Creating Confirmation....");
-
         WearableMessage message = new WearableMessage();
         message.path = "confirmation";
 
@@ -59,11 +57,9 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
     }
 
     public void flushMessages() {
-        Log.i("WearableConnection", "Flushing messages...");
         if (mNode != null && mGoogleApiClient!=null && mGoogleApiClient.isConnected()) {
             while (!messages.isEmpty()) {
                 WearableMessage message = messages.poll();
-                Log.i("WearableConnection", "Sending message with topic " + message.path);
                 Wearable.MessageApi.sendMessage(
                         mGoogleApiClient, mNode, message.path, message.data).setResultCallback(
 
@@ -73,8 +69,6 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
                                 if (!sendMessageResult.getStatus().isSuccess()) {
                                     Log.w("WearableConnection", "Failed to send message with status code: "
                                             + sendMessageResult.getStatus().getStatusCode());
-                                } else {
-                                    Log.i("WearableConnection", "Callback Success!!");
                                 }
                             }
                         }
@@ -84,29 +78,23 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
         }
     }
 
-    public void trackNotFound() {
-
-    }
-
     public void errorOccurred() {
 
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.i("WearableConnection", "onConnected");
         flushMessages();
     }
 
     @Override
     public void onConnectionSuspended(int i) {
         mGoogleApiClient = null;
-        Log.i("WearableConnection", "onConnectionSuspended: " + i);
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         mGoogleApiClient = null;
-        Log.i("WearableConnection", "onConnectionFailed: " + connectionResult.getErrorCode());
+        Log.w("WearableConnection", "onConnectionFailed: " + connectionResult.getErrorCode());
     }
 }

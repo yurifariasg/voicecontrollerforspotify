@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
@@ -31,6 +32,7 @@ public class TrackHandler {
         } catch (Exception exception) {
             Log.w("TrackHandler", "Failed to Search Track: " + exception.getLocalizedMessage());
             connection.errorOccurred();
+            Crashlytics.logException(exception);
         }
         return null;
     }
@@ -39,6 +41,5 @@ public class TrackHandler {
         Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse(trackUri) );
         intent.setFlags((Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_FROM_BACKGROUND));
         context.startActivity(intent);
-        Log.i("TrackHandler", "Sending tune to Spotify.");
     }
 }

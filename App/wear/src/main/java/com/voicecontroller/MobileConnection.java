@@ -77,11 +77,9 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
     }
 
     private void flushMessages() {
-        Log.i("MobileConnection", "Flushing Messages...");
         if (mNode != null && mGoogleApiClient!=null && mGoogleApiClient.isConnected()) {
             while (!messages.isEmpty()) {
                 final WearableMessage message = messages.poll();
-                Log.i("MobileConnection", "Sending message with topic " + message.path);
                 Wearable.MessageApi.sendMessage(
                         mGoogleApiClient, mNode.getId(), message.path, message.data).setResultCallback(
 
@@ -90,13 +88,12 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
                             public void onResult(MessageApi.SendMessageResult sendMessageResult) {
 
                                 if (!sendMessageResult.getStatus().isSuccess()) {
-                                    Log.e("TAG", "Failed to send message with status code: "
+                                    Log.e("MobileConnection", "Failed to send message with status code: "
                                             + sendMessageResult.getStatus().getStatusCode());
                                     if (message.callback != null) {
                                         message.callback.onMessageFailed();
                                     }
                                 } else {
-                                    Log.i("sendMessage", "Callback Success!!");
                                     if (message.callback != null) {
                                         message.callback.onMessageSent();
                                     }
@@ -111,7 +108,6 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.e("MobileConnection", "Connected!");
         Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
             @Override
             public void onResult(NodeApi.GetConnectedNodesResult nodes) {
@@ -127,7 +123,6 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.e("MobileConnection", "Conneciton Suspended: " + i);
     }
 
     @Override

@@ -94,7 +94,6 @@ public class SpotifyWebAPI {
     }
 
     public static void refreshOAuth(OAuthRecord record) {
-        Log.i("SpotifyWebAPI", "Refreshing old OAuth token...");
         try {
             String authCode = "Basic " + ENCODED;
             String encodedParams = "grant_type=refresh_token&refresh_token=" + URLEncoder.encode(record.refresh_token, "UTF-8");
@@ -111,11 +110,11 @@ public class SpotifyWebAPI {
             record.save();
         } catch (Exception e) {
             Log.w("SpotifyWebAPI", "Failed to refresh token...", e);
+            Crashlytics.logException(e);
         }
     }
 
     public static void callOAuthWindow(Activity activity) {
-        Log.i("SpotifyWebAPI", "Calling OAuth Window");
         // Initiate new OAuth Request...
         SpotifyAuthentication.openAuthWindow(CLIENT_ID, "code", REDIRECT_URI,
                 new String[]{"user-read-private", "streaming"}, null, activity);
@@ -152,6 +151,7 @@ public class SpotifyWebAPI {
 
                 } catch (Exception e) {
                     Log.w("SpotifyWebAPI", "Failed to get access and refresh tokens", e);
+                    Crashlytics.logException(e);
                 }
 
                 return record;
@@ -345,8 +345,6 @@ public class SpotifyWebAPI {
         if (auth != null && !auth.isEmpty()) {
             conn.setRequestProperty("Authorization", "Bearer " + auth);
         }
-
-        Log.i("SpotifyWebAPI", "Request to: " + urlStr + " - OAuth: " + (auth == null ? "None" : auth));
 
         if (conn.getResponseCode() != 200) {
             throw new IOException(conn.getResponseMessage());

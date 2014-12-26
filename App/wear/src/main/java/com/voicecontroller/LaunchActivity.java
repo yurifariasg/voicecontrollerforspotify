@@ -30,18 +30,20 @@ public class LaunchActivity extends Activity implements MessageCallback {
     protected void onStart() {
         super.onStart();
         query = getIntent().getStringExtra(SearchManager.QUERY);
-        query = query == null ? "Dragonette Let It Go" : query;
+        if (query != null && !query.isEmpty()) {
+            final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
+            stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+                @Override
+                public void onLayoutInflated(WatchViewStub stub) {
+                    ((TextView) stub.findViewById(R.id.queryNameTv)).setText(query);
+                }
+            });
+            startTimestamp = System.currentTimeMillis();
 
-        final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
-        stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
-            @Override
-            public void onLayoutInflated(WatchViewStub stub) {
-                ((TextView) stub.findViewById(R.id.queryNameTv)).setText(query);
-            }
-        });
-        startTimestamp = System.currentTimeMillis();
-
-        MobileConnection.getInstance().sendQuery(query, this);
+            MobileConnection.getInstance().sendQuery(query, this);
+        } else {
+            finish();
+        }
     }
 
     @Override

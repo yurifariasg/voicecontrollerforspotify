@@ -35,9 +35,6 @@ public class ListenerFromWear extends WearableListenerService {
 
         try {
             DataMap data = DataMap.fromByteArray(messageEvent.getData());
-
-            Log.i("ListenerFromWear", "Received Message from " + nodeId + " with topic " + path);
-
             WearableConnection connection = new WearableConnection(nodeId, this);
 
             if (path.equalsIgnoreCase("query")) {
@@ -89,7 +86,6 @@ public class ListenerFromWear extends WearableListenerService {
         } else {
             PowerManager.WakeLock wl = null;
             if (Settings.USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY) {
-                Log.i("ListenerFromWear", "Lock Acquired");
                 PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
                 wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK
                         | PowerManager.ACQUIRE_CAUSES_WAKEUP
@@ -104,7 +100,6 @@ public class ListenerFromWear extends WearableListenerService {
                 kl.disableKeyguard();
             }
 
-            Log.i("ListenerFromWear", "Sending to Spotify: " + trackUri);
             TrackHandler.playTrack(trackUri, connection, this);
 
             if (Settings.USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY && wl != null) {
@@ -112,7 +107,6 @@ public class ListenerFromWear extends WearableListenerService {
                     @Override
                     public void run() {
                         wlFinal.release();
-                        Log.i("ListenerFromWear", "Lock Released");
                     }
                 }, 10000);
             }

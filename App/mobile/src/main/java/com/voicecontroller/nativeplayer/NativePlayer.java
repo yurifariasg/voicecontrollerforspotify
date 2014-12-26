@@ -77,19 +77,16 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             @Override
             public void onPlay() {
                 resume();
-                Log.i("NativePlayer.mySession", "onPlay");
             }
 
             @Override
             public void onPause() {
                 pause();
-                Log.i("NativePlayer.mySession", "onPause");
             }
 
             @Override
             public void onStop() {
                 pause();
-                Log.i("NativePlayer.mySession", "onStop");
             }
         });
         mySession.setFlags(MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS | MediaSession.FLAG_HANDLES_MEDIA_BUTTONS);
@@ -97,7 +94,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onDestroy() {
-        Log.i("NativePlayer", "Shutting down...");
         if (mPlayer != null && !mPlayer.isShutdown()) {
             mPlayer.shutdown();
             Spotify.destroyPlayer(this);
@@ -105,6 +101,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 mPlayer.awaitTermination(10, TimeUnit.SECONDS);
             } catch (Exception e) {
                 Log.w("NativePlayer", "Raised exceptiong when awaiting termination...", e);
+                Crashlytics.logException(e);
             }
             mPlayer = null;
         }
@@ -209,7 +206,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
             } else if (intent.getAction().equals(PLAY_CONTROL_ACTION)) {
                 Track track = Track.fromBundle(intent.getBundleExtra("track"));
-                Log.i("NativePlayer", "New track received: " + track.toString());
 
                 if (track != null) {
                     tracks.add(track);
@@ -248,7 +244,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     private void createOAuthErrorNotification() {
-        Log.i("NativePlayer", "Creating error notification...");
         // Build intent for notification content
         Intent viewIntent = new Intent(this, MainActivity.class);
         PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
@@ -271,7 +266,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     private void initializePlayerWithToken(OAuthRecord record) {
-        Log.i("NativePlayer", "Initializing player...");
         // No verifications with token are done here...
         String token = record.access_token;
         Config playerConfig = new Config(this, token, SpotifyWebAPI.CLIENT_ID);
@@ -298,7 +292,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     public void play() {
         if (!tracks.isEmpty() && mPlayer != null && mPlayer.isInitialized()) {
-            Log.i("NativePlayer", "Playing song in the queue...");
             state = PlaybackState.STATE_PLAYING;
             mPlayer.play(tracks.peek().getUri());
             updateTrackMetadata();
@@ -318,7 +311,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onInitialized() {
-        Log.i("NativePlayer", "onInitialized");
         mPlayer.addConnectionStateCallback(this);
         mPlayer.addPlayerNotificationCallback(this);
         play();
@@ -326,7 +318,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onPlaybackEvent(EventType eventType, PlayerState playerState) {
-        Log.i("NativePlayer", "onPlaybackEvent: " + eventType.name() + " - " + playerState.toString());
         if (eventType.equals(EventType.LOST_PERMISSION) || eventType.equals(EventType.END_OF_CONTEXT)) {
             stopNotification();
             mySession.setActive(false);
@@ -337,7 +328,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onPlaybackError(ErrorType errorType, String s) {
-        Log.i("NativePlayer", "onPlaybackError: " + errorType.name() + " - " + s);
+        Log.e("NativePlayer", "onPlaybackError: " + errorType.name() + " - " + s);
         close();
     }
 
@@ -350,12 +341,11 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onLoggedIn() {
-        Log.i("NativePlayer", "SpotifySDK Connection: onLoggedIn");
     }
 
     @Override
     public void onLoggedOut() {
-        Log.i("NativePlayer", "SpotifySDK Connection: onLoggedOut");
+
     }
 
     @Override
@@ -366,16 +356,13 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onTemporaryError() {
-        Log.w("NativePlayer", "SpotifySDK Connection: onTemporaryError");
     }
 
     @Override
     public void onNewCredentials(String s) {
-        Log.i("NativePlayer", "onNewCredentials: " + s);
     }
 
     @Override
     public void onConnectionMessage(String s) {
-        Log.i("NativePlayer", "SpotifySDK Connection: onConnectionMessage: " + s);
     }
 }

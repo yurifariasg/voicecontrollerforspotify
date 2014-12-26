@@ -12,16 +12,11 @@ public class ListenerFromMobile extends WearableListenerService {
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
-
-        Log.i("ListenerFromMobile", "onMessageReceived");
-
         String nodeId = messageEvent.getSourceNodeId();
         String path = messageEvent.getPath();
 
         try {
             DataMap data = DataMap.fromByteArray(messageEvent.getData());
-
-            Log.i("ListenerFromWear", "Received Message from " + nodeId + " with topic " + path);
 
             if (path.equalsIgnoreCase("confirmation")) {
                 Intent i = new Intent(this, ConfirmationActivity.class);
@@ -35,6 +30,12 @@ public class ListenerFromMobile extends WearableListenerService {
             }
         } catch (Exception e) {
             Log.e("ListenerFromMobile", "Error: " + e.getLocalizedMessage());
+
+            // Pass the exception to a Service which will send the data upstream to your Smartphone/Tablet
+            Intent errorIntent = new Intent(this, ErrorService.class);
+            errorIntent.putExtra("exception", e);
+            startService(errorIntent);
+
         }
     }
 }
