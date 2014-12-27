@@ -7,15 +7,16 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.media.MediaMetadata;
-import android.media.session.MediaController;
 import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
+import android.os.Build;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import com.crashlytics.android.Crashlytics;
 import com.spotify.sdk.android.Spotify;
@@ -55,8 +56,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     private Player mPlayer;
     private Queue<Track> tracks;
-    private MediaSession mySession;
-    private MediaController myController;
+    private MediaSessionCompat mySession;
 
     public NativePlayer() {
         tracks = new LinkedList<>();
@@ -70,10 +70,9 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     @Override
     public void onCreate() {
         super.onCreate();
-        mySession = new MediaSession(this, Settings.APP_TAG);
-        myController = new MediaController(this, mySession.getSessionToken());
+        mySession = new MediaSessionCompat(this, Settings.APP_TAG);
 
-        mySession.setCallback(new MediaSession.Callback() {
+        mySession.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
                 resume();
@@ -89,7 +88,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 pause();
             }
         });
-        mySession.setFlags(MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS | MediaSession.FLAG_HANDLES_MEDIA_BUTTONS);
+        mySession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS | MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS);
     }
 
     @Override
@@ -100,13 +99,15 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             try {
                 mPlayer.awaitTermination(10, TimeUnit.SECONDS);
             } catch (Exception e) {
-                Log.w("NativePlayer", "Raised exceptiong when awaiting termination...", e);
+                Log.e("NativePlayer", "Raised exceptiong when awaiting termination...", e);
                 Crashlytics.logException(e);
             }
             mPlayer = null;
         }
         stopNotification();
-        mySession.release();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            mySession.release();
+        }
         super.onDestroy();
     }
 
@@ -140,37 +141,60 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         byte[] artworkBytes = tracks.peek().getImage();
         Bitmap artwork = BitmapFactory.decodeByteArray(artworkBytes, 0, artworkBytes.length);
 
-        mySession.setMetadata(new MediaMetadata.Builder()
-                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artwork)
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, tracks.peek().getArtist())
-                .putString(MediaMetadata.METADATA_KEY_TITLE, tracks.peek().getName())
+        mySession.setMetadata(new MediaMetadataCompat.Builder()
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, artwork)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, tracks.peek().getArtist())
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, tracks.peek().getName())
                 .build());
 
         Notification.Builder builder = new Notification.Builder(this)
-                .setSmallIcon(R.drawable.ic_stat_music)
-                .setContentTitle(tracks.peek().getName())
+                .setSmallIcon(R.drawable.ic_stat_music);
+        builder.setContentTitle(tracks.peek().getName())
                 .setContentText(tracks.peek().getArtist())
-                .setLargeIcon(artwork)
-                .setColor(Color.rgb(38, 50, 56))
-                .setStyle(new Notification.MediaStyle()
-                        .setMediaSession(mySession.getSessionToken()));
+                .setLargeIcon(artwork);
 
-        if (state == PlaybackState.STATE_PLAYING) {
-            builder.addAction(android.R.drawable.ic_media_pause, "Pause", getIntentFor(PAUSE));
-        } else {
-            builder.addAction(android.R.drawable.ic_media_play, "Play", getIntentFor(PLAY));
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(Color.rgb(38, 50, 56));
+            builder.setStyle(new Notification.MediaStyle()
+                    .setMediaSession((MediaSession.Token) mySession.getSessionToken().getToken()));
+
+            if (state == PlaybackStateCompat.STATE_PLAYING) {
+                builder.addAction(android.R.drawable.ic_media_pause, "Pause", getIntentFor(PAUSE));
+            } else {
+                builder.addAction(android.R.drawable.ic_media_play, "Play", getIntentFor(PLAY));
+            }
+
+            builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Close", getIntentFor(CLOSE));
         }
-
-        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Close", getIntentFor(CLOSE));
 
         Notification noti = builder.build();
 
-        PlaybackState.Builder stateBuilder = new PlaybackState.Builder()
-                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PLAY_PAUSE |
-                                PlaybackState.ACTION_PAUSE)
-                .setState(state, 0, 1, SystemClock.elapsedRealtime());
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.notification_layout);
 
-        PlaybackState pbackState = stateBuilder.build();
+            contentView.setImageViewBitmap(R.id.thumbnail_notification_tv, artwork);
+            contentView.setTextViewText(R.id.trackname_notification_tv, tracks.peek().getName());
+            contentView.setTextViewText(R.id.artistname_notification_tv, tracks.peek().getArtist());
+
+            if (state == PlaybackStateCompat.STATE_PLAYING) {
+                contentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PAUSE));
+                contentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.pause);
+            } else {
+                contentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PLAY));
+                contentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.play);
+            }
+
+            contentView.setOnClickPendingIntent(R.id.close_notification_bt, getIntentFor(CLOSE));
+
+            noti.bigContentView = contentView;
+        }
+
+        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
+        stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE |
+                PlaybackStateCompat.ACTION_PAUSE);
+        stateBuilder.setState(state, 0, 1);
+
+        PlaybackStateCompat pbackState = stateBuilder.build();
         mySession.setPlaybackState(pbackState);
 
         startForeground(NOTIFICATION_ID, noti);
@@ -212,7 +236,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 }
 
                 // Initialization.
-                if (mPlayer == null || !mPlayer.isInitialized() || mPlayer.isShutdown()) {
+                if ((mPlayer == null || !mPlayer.isInitialized() || mPlayer.isShutdown()) && !Settings.MOCK_SPOTIFY_PLAYER) {
                     OAuthRecord record = OAuthService.getOAuthToken();
                     if (record != null) {
                         if (!record.isValid()) {
@@ -224,6 +248,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                         Log.w("NativePlayer", "No valid record found.");
                         createOAuthErrorNotification();
                     }
+                } else if (Settings.MOCK_SPOTIFY_PLAYER) {
+                    play();
                 } else {
                     playNext();
                 }
@@ -275,25 +301,32 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
 
     public void pause() {
-        if (mPlayer != null && mPlayer.isInitialized()) {
-            state = PlaybackState.STATE_PAUSED;
-            mPlayer.pause();
+        if (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized())) {
+            state = PlaybackStateCompat.STATE_PAUSED;
+            if (mPlayer != null) {
+                mPlayer.pause();
+            }
             updateTrackMetadata();
         }
     }
 
     public void resume() {
-        if (mPlayer != null && mPlayer.isInitialized()) {
-            state = PlaybackState.STATE_PLAYING;
-            mPlayer.resume();
+        if (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized())) {
+            state = PlaybackStateCompat.STATE_PLAYING;
+            if (mPlayer != null) {
+                mPlayer.resume();
+            }
             updateTrackMetadata();
         }
     }
 
     public void play() {
-        if (!tracks.isEmpty() && mPlayer != null && mPlayer.isInitialized()) {
-            state = PlaybackState.STATE_PLAYING;
-            mPlayer.play(tracks.peek().getUri());
+        if (!tracks.isEmpty() && (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized()))) {
+            state = PlaybackStateCompat.STATE_PLAYING;
+
+            if (mPlayer != null) {
+                mPlayer.play(tracks.peek().getUri());
+            }
             updateTrackMetadata();
         }
     }

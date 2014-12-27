@@ -25,6 +25,8 @@ public class Settings {
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
     public static boolean ENABLE_CRASHLYTICS = true;
+    public static boolean EMULATOR_DEBUGGING_ACTIVE = false;
+    public static boolean MOCK_SPOTIFY_PLAYER = false;
     public static boolean USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY = false;
     public static boolean USE_KEYGUARD_ON_SENDING_TRACK_TO_SPOTIFY = false;
     public static int SEARCH_TRACK_MAXIMUM_RETRIES = 5;

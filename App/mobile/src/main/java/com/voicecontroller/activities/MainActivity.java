@@ -4,8 +4,11 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,6 +19,8 @@ import com.crashlytics.android.Crashlytics;
 import com.voicecontroller.R;
 import com.voicecontroller.fragments.HelpFragment;
 import com.voicecontroller.fragments.SettingsFragment;
+import com.voicecontroller.models.Track;
+import com.voicecontroller.nativeplayer.NativePlayer;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.callbacks.OnProfileAcquired;
 import com.voicecontroller.fragments.LoginFragment;
@@ -45,6 +50,37 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         setContentView(R.layout.activity_main);
         fl = (FrameLayout) findViewById(R.id.main_layout);
         initializeScreen();
+
+        if (isAndroidEmulator() && Settings.EMULATOR_DEBUGGING_ACTIVE) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+
+                    try {
+                        Track t = SpotifyWebAPI.searchTrack("Call Atlantis", mainActivity.get());
+                        Intent i = new Intent(mainActivity.get(), NativePlayer.class);
+                        i.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+                        i.putExtra("track", t.toBundle());
+                        startService(i);
+
+                    } catch (Exception e) {
+                        Log.e("Exception", "Exception", e);
+                    }
+
+                    return null;
+                }
+            }.execute();
+        }
+    }
+
+    private static boolean isAndroidEmulator() {
+        String model = Build.MODEL;
+        String product = Build.PRODUCT;
+        boolean isEmulator = false;
+        if (product != null) {
+            isEmulator = product.equals("sdk") || product.contains("_sdk") || product.contains("sdk_");
+        }
+        return isEmulator;
     }
 
     @Override
