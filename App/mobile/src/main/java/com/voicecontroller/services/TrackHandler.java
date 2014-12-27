@@ -26,6 +26,8 @@ public class TrackHandler {
 
             if (track != null) {
                 connection.requestConfirmation(track);
+            } else {
+                throw new Exception("Failed to find track with maximum number of retries...");
             }
             return track;
 

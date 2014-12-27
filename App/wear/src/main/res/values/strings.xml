@@ -2,8 +2,9 @@
 <resources>
 
     <string name="app_name">Voice Controller for Spotify (BETA)</string>
-    <string name="starting_tune">Starting your tune&#8230;</string>
+    <string name="starting_tune">Starting your tune…</string>
     <string name="sending">Sending</string>
     <string name="to_device">to your device</string>
+    <string name="use_google_now_to_launch">Hey there,\nthis app does not have any functionality on its launcher. Use Google Now \"Play …\" voice command to launch the app.</string>
 
 </resources>

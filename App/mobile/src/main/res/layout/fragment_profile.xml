@@ -1,21 +1,34 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context="com.voicecontroller.fragments.ProfileFragment">
 
-    <com.voicecontroller.views.RoundImageView
+    <Button
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/profileIv"
-        android:layout_gravity="center"
-        android:src="@drawable/profile"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true"
-        android:layout_marginBottom="18dp"
-        android:layout_marginTop="0dp" />
+        android:text="@string/logout"
+        android:id="@+id/logoutBt"
+        android:layout_gravity="center_vertical" />
 
     <TextView
+        android:layout_above="@id/logoutBt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Hello World SUper long text that exceeds everything"
+        android:singleLine="true" android:ellipsize="end"
+
+        android:textSize="40sp"
+        android:id="@+id/userNameTv"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:layout_gravity="center_horizontal" />
+
+    <TextView
+        android:layout_above="@id/userNameTv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/logged_in_as"
@@ -23,21 +36,16 @@
         android:id="@+id/loggedInTv"
         android:layout_gravity="start" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="40sp"
-        android:id="@+id/userNameTv"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
-        android:layout_gravity="center_horizontal" />
+    <com.voicecontroller.views.RoundImageView
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/profileIv"
+        android:layout_alignParentTop="true"
+        android:layout_above="@id/loggedInTv"
+        android:layout_gravity="center"
+        android:src="@drawable/profile"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:layout_marginTop="0dp" />
 
-    <Button
-        android:layout_width="180dp"
-        android:layout_height="wrap_content"
-        android:text="@string/logout"
-        android:id="@+id/logoutBt"
-        android:layout_gravity="center_horizontal" />
-
-</LinearLayout>
+</RelativeLayout>

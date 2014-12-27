@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId "com.voicecontroller"
-        minSdkVersion 21
+        minSdkVersion 19
         targetSdkVersion 21
         versionCode 2
         versionName "1.0.1"
