@@ -21,7 +21,7 @@ import java.util.HashMap;
 
 public class ListenerFromWear extends WearableListenerService {
 
-    private static HashMap<String, Track> tracks = new HashMap<String, Track>();
+    private static HashMap<String, Track> tracks = new HashMap<>();
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
@@ -47,20 +47,17 @@ public class ListenerFromWear extends WearableListenerService {
                 if (Settings.ENABLE_CRASHLYTICS) {
                     DataMap map = DataMap.fromByteArray(messageEvent.getData());
                     ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
-                    try {
-                        ObjectInputStream ois = new ObjectInputStream(bis);
-                        Throwable ex = (Throwable) ois.readObject();
 
-                        Crashlytics.setBool("wear_exception", true);
-                        Crashlytics.setString("board", map.getString("board"));
-                        Crashlytics.setString("fingerprint", map.getString("fingerprint"));
-                        Crashlytics.setString("model", map.getString("model"));
-                        Crashlytics.setString("manufacturer", map.getString("manufacturer"));
-                        Crashlytics.setString("product", map.getString("product"));
-                        Crashlytics.logException(ex);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    ObjectInputStream ois = new ObjectInputStream(bis);
+                    Throwable ex = (Throwable) ois.readObject();
+
+                    Crashlytics.setBool("wear_exception", true);
+                    Crashlytics.setString("board", map.getString("board"));
+                    Crashlytics.setString("fingerprint", map.getString("fingerprint"));
+                    Crashlytics.setString("model", map.getString("model"));
+                    Crashlytics.setString("manufacturer", map.getString("manufacturer"));
+                    Crashlytics.setString("product", map.getString("product"));
+                    Crashlytics.logException(ex);
                 }
             }
 

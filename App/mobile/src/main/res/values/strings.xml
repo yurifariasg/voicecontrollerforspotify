@@ -5,10 +5,11 @@
     <string name="action_settings">Settings</string>
     <string name="action_help">Help</string>
     <string name="logged_in_as">Logged in as</string>
+    <string name="sign_in">SIGN IN</string>
     <string name="logout">Logout</string>
     <string name="not_premium_account">Sorry, we only support Spotify Premium accounts.</string>
     <string name="could_not_play_title">Could not play song.</string>
-    <string name="login_to_play_songs">Your must be logged in to be able to play songs on native player.</string>
+    <string name="login_to_play_songs">Your must be logged in on Voice Controller for Spotify to be able to play songs on native player.</string>
     <string name="use_native_player">Use native player</string>
     <string name="use_native_player_desc">(BETA) Native player is more reliable than Spotify App when it is not initialized.</string>
     <string name="yes">YES</string>
@@ -17,10 +18,10 @@
     <string name="blur_images_desc">Increase or reduce the blur on album artwork.</string>
     <string name="confirmation_time">Confirmation time</string>
     <string name="confirmation_time_desc">The amount of seconds that the confirmation dialog should have.</string>
-    <string name="title_help">Assigning to a voice action.</string>
+    <string name="title_help">Assigning to a voice action</string>
     <string name="help_1">1. Open Android Wear App.</string>
     <string name="help_2">2. Click on \"Play music\" and select Voice Controller for Spotify.</string>
-    <string name="help_3">Done! Now, just say \"Ok, Google\" on your Android Wear device and then \"Play …\" with a song name to start the playback on your phone.</string>
+    <string name="help_3">Done! Now, just say \"OK, Google\" on your Android Wear device and then \"Play …\" with a song name to start the playback on your phone.</string>
     <string name="help_description_image">Image showing voice controller selected on Android Wear app.</string>
 
 </resources>

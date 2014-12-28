@@ -10,6 +10,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:supportsRtl="false"
         android:theme="@style/AppTheme"
         android:name="com.orm.SugarApp">
 
@@ -32,7 +33,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".services.ListenerFromWear">
+        <service android:name=".services.ListenerFromWear" android:exported="false">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
             </intent-filter>

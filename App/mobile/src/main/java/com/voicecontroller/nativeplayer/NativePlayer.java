@@ -105,9 +105,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             mPlayer = null;
         }
         stopNotification();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            mySession.release();
-        }
+        mySession.release();
         super.onDestroy();
     }
 

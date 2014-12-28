@@ -2,18 +2,14 @@ package com.voicecontroller.settings;
 
 import android.util.SparseArray;
 
-import com.google.android.gms.internal.id;
-import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.voicecontroller.R;
 import com.voicecontroller.settings.Setting;
 import com.voicecontroller.settings.Settings;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Helper class for providing sample content for user interfaces created by

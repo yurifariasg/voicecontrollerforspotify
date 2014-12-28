@@ -15,8 +15,6 @@ import com.voicecontroller.models.Track;
 import com.voicecontroller.models.WearableMessage;
 import com.voicecontroller.settings.Settings;
 
-import org.json.JSONException;
-
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.Queue;
