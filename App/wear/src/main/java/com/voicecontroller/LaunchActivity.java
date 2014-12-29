@@ -116,6 +116,12 @@ public class LaunchActivity extends Activity implements MessageCallback {
 
     @Override
     public void onMessageFailed() {
-        Toast.makeText(this, "Message Failed...", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, android.support.wearable.activity.ConfirmationActivity.class);
+        intent.putExtra(android.support.wearable.activity.ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                android.support.wearable.activity.ConfirmationActivity.FAILURE_ANIMATION);
+        intent.putExtra(android.support.wearable.activity.ConfirmationActivity.EXTRA_MESSAGE,
+                getString(R.string.query_failed));
+        startActivity(intent);
+        finish();
     }
 }

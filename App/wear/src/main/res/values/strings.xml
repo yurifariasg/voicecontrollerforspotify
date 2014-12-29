@@ -5,6 +5,8 @@
     <string name="starting_tune">Starting your tune…</string>
     <string name="sending">Sending</string>
     <string name="to_device">to your device</string>
-    <string name="use_google_now_to_launch">Hey there,\nthis app does not have any functionality on its launcher. Use Google Now \"Play …\" voice command to launch the app.</string>
+    <string name="confirmation_sent">Confirmation sent!</string>
+    <string name="confirmation_failed">Could not send confirmation.</string>
+    <string name="query_failed">Could not send query to device.</string>
 
 </resources>

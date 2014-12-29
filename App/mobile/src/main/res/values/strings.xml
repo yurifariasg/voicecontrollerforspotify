@@ -20,8 +20,10 @@
     <string name="confirmation_time_desc">The amount of seconds that the confirmation dialog should have.</string>
     <string name="title_help">Assigning to a voice action</string>
     <string name="help_1">1. Open Android Wear App.</string>
-    <string name="help_2">2. Click on \"Play music\" and select Voice Controller for Spotify.</string>
+    <string name="help_2">2. Click on \"Play music\" and select Voice Controller for Spotify. If you can\'t see the app in the list, try rebooting your smartwatch for it to sync.</string>
     <string name="help_3">Done! Now, just say \"OK, Google\" on your Android Wear device and then \"Play …\" with a song name to start the playback on your phone.</string>
     <string name="help_description_image">Image showing voice controller selected on Android Wear app.</string>
+    <string name="track_not_found_title">Song not found</string>
+    <string name="track_not_found_desc">Your query had no matches.</string>
 
 </resources>

@@ -5,18 +5,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
+import com.voicecontroller.R;
+import com.voicecontroller.exceptions.NoTrackFoundException;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.nativeplayer.NativePlayer;
 
+import org.json.JSONException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 public class ListenerFromWear extends WearableListenerService {
@@ -25,6 +32,7 @@ public class ListenerFromWear extends WearableListenerService {
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
+        super.onMessageReceived(messageEvent);
 
         if (Settings.ENABLE_CRASHLYTICS) {
             Crashlytics.start(this);
@@ -38,32 +46,60 @@ public class ListenerFromWear extends WearableListenerService {
             WearableConnection connection = new WearableConnection(nodeId, this);
 
             if (path.equalsIgnoreCase("query")) {
-                Track track = TrackHandler.lookForTrack(data.getString("query"), connection, this);
-                // Add track to map
-                tracks.put(track.getUri(), track);
+                onQueryReceived(data.getString("query"), connection);
             } else if (path.equalsIgnoreCase("confirm_track")) {
                 onConfirmationReceived(data.getString("uri"), connection);
             } else if (path.equalsIgnoreCase("wear_error")) {
                 if (Settings.ENABLE_CRASHLYTICS) {
                     DataMap map = DataMap.fromByteArray(messageEvent.getData());
-                    ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
 
-                    ObjectInputStream ois = new ObjectInputStream(bis);
-                    Throwable ex = (Throwable) ois.readObject();
+                    try (
+                        ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
+                        ObjectInputStream ois = new ObjectInputStream(bis);
+                    ) {
+                        Throwable ex = (Throwable) ois.readObject();
 
-                    Crashlytics.setBool("wear_exception", true);
-                    Crashlytics.setString("board", map.getString("board"));
-                    Crashlytics.setString("fingerprint", map.getString("fingerprint"));
-                    Crashlytics.setString("model", map.getString("model"));
-                    Crashlytics.setString("manufacturer", map.getString("manufacturer"));
-                    Crashlytics.setString("product", map.getString("product"));
-                    Crashlytics.logException(ex);
+                        Crashlytics.setBool("wear_exception", true);
+                        Crashlytics.setString("board", map.getString("board"));
+                        Crashlytics.setString("fingerprint", map.getString("fingerprint"));
+                        Crashlytics.setString("model", map.getString("model"));
+                        Crashlytics.setString("manufacturer", map.getString("manufacturer"));
+                        Crashlytics.setString("product", map.getString("product"));
+                        Crashlytics.logException(ex);
+                    } catch (Exception e) { Crashlytics.logException(e); }
                 }
             }
 
         } catch (Exception e) {
             Log.e("ListenerFromWear", e.getLocalizedMessage());
             Crashlytics.logException(e);
+        }
+    }
+
+    private void showTrackNotFoundNotification() {
+        int notificationId = 1001;
+        // Build intent for notification content
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(getApplicationContext())
+                        .setSmallIcon(R.drawable.ic_stat_music)
+                        .setContentTitle(getString(R.string.track_not_found_title))
+                        .setContentText(getString(R.string.track_not_found_desc));
+        notificationBuilder.extend(new NotificationCompat.WearableExtender().setHintHideIcon(true));
+        notificationBuilder.setPriority(NotificationCompat.PRIORITY_MAX);
+
+        // Get an instance of the NotificationManager service
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+        // Build the notification and issues it with notification manager.
+        notificationManager.notify(notificationId, notificationBuilder.build());
+    }
+
+    private void onQueryReceived(String query, WearableConnection connection) throws JSONException, UnsupportedEncodingException {
+        try {
+            Track track = TrackHandler.lookForTrack(query, connection, this);
+            tracks.put(track.getUri(), track);
+        } catch (NoTrackFoundException e) {
+            showTrackNotFoundNotification();
         }
     }
 

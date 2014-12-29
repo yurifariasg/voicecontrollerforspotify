@@ -45,10 +45,11 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
         WearableMessage message = new WearableMessage();
         message.path = "confirmation";
 
-        DataMap trackMap = track.toDataMap();
-        trackMap.putInt("confirmation_time", Settings.getConfirmationTime());
-
-        message.data = trackMap.toByteArray();
+        if (track != null) {
+            DataMap trackMap = track.toDataMap();
+            trackMap.putInt("confirmation_time", Settings.getConfirmationTime());
+            message.data = trackMap.toByteArray();
+        }
         messages.add(message);
 
         flushMessages();

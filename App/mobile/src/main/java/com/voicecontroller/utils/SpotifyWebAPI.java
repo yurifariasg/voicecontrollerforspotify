@@ -275,21 +275,16 @@ public class SpotifyWebAPI {
                     b = scaledBitmap;
                 }
 
-                try {
-                    float blur = Settings.getBlur();
-                    if (blur > 0) {
-                        RenderScript rs = RenderScript.create(context);
-                        final Allocation input = Allocation.createFromBitmap(rs, b);
-                        final Allocation output = Allocation.createTyped(rs, input.getType());
-                        final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-                        script.setRadius(Settings.getBlur());
-                        script.setInput(input);
-                        script.forEach(output);
-                        output.copyTo(b);
-                    }
-                } catch (Exception e) {
-                    Log.e("SpotifyWebAPI", "Exception while processing image: " + e.getLocalizedMessage(), e);
-                    Crashlytics.logException(e);
+                float blur = Settings.getBlur();
+                if (blur > 0) {
+                    RenderScript rs = RenderScript.create(context);
+                    final Allocation input = Allocation.createFromBitmap(rs, b);
+                    final Allocation output = Allocation.createTyped(rs, input.getType());
+                    final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+                    script.setRadius(Settings.getBlur());
+                    script.setInput(input);
+                    script.forEach(output);
+                    output.copyTo(b);
                 }
 
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();

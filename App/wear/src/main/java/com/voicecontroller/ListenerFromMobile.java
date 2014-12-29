@@ -1,6 +1,10 @@
 package com.voicecontroller;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.google.android.gms.wearable.DataMap;
@@ -16,9 +20,12 @@ public class ListenerFromMobile extends WearableListenerService {
         String path = messageEvent.getPath();
 
         try {
-            DataMap data = DataMap.fromByteArray(messageEvent.getData());
+            DataMap data = null;
+            if (messageEvent.getData() != null) {
+                data = DataMap.fromByteArray(messageEvent.getData());
+            }
 
-            if (path.equalsIgnoreCase("confirmation")) {
+            if (path.equalsIgnoreCase("confirmation") && data != null && data.getString("uri") != null) {
                 Intent i = new Intent(this, ConfirmationActivity.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 i.putExtra("trackName", data.getString("name"));
@@ -30,7 +37,6 @@ public class ListenerFromMobile extends WearableListenerService {
             }
         } catch (Exception e) {
             Log.e("ListenerFromMobile", "Error: " + e.getLocalizedMessage());
-
             // Pass the exception to a Service which will send the data upstream to your Smartphone/Tablet
             Intent errorIntent = new Intent(this, ErrorService.class);
             errorIntent.putExtra("exception", e);

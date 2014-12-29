@@ -73,10 +73,10 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
         createMessage("query", data, callback);
     }
 
-    public void confirmTrack(String uri) {
+    public void confirmTrack(String uri, MessageCallback callback) {
         DataMap data = new DataMap();
         data.putString("uri", uri);
-        createMessage("confirm_track", data, null);
+        createMessage("confirm_track", data, callback);
     }
 
     private void flushMessages() {

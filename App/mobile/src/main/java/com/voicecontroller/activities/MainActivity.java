@@ -51,7 +51,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         fl = (FrameLayout) findViewById(R.id.main_layout);
         initializeScreen();
 
-        if (isAndroidEmulator() && Settings.EMULATOR_DEBUGGING_ACTIVE) {
+        if (Settings.EMULATOR_DEBUGGING_ACTIVE) {
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... params) {
@@ -71,16 +71,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 }
             }.execute();
         }
-    }
-
-    private static boolean isAndroidEmulator() {
-        String model = Build.MODEL;
-        String product = Build.PRODUCT;
-        boolean isEmulator = false;
-        if (product != null) {
-            isEmulator = product.equals("sdk") || product.contains("_sdk") || product.contains("sdk_");
-        }
-        return isEmulator;
     }
 
     @Override

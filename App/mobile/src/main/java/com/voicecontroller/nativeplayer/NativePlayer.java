@@ -3,6 +3,8 @@ package com.voicecontroller.nativeplayer;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,6 +18,7 @@ import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
 import com.crashlytics.android.Crashlytics;
@@ -48,6 +51,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public static final int PAUSE = 2;
     public static final int NEXT = 3;
     public static final int CLOSE = 5;
+    public static final int MAIN = 6;
 
     public static final String MEDIA_CONTROL_ACTION = "com.voicecontroller.music.cmd";
     public static final String PLAY_CONTROL_ACTION = "com.voicecontroller.music.play";
@@ -57,6 +61,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     private Player mPlayer;
     private Queue<Track> tracks;
     private MediaSessionCompat mySession;
+
+    private Notification ongoingNotification;
 
     public NativePlayer() {
         tracks = new LinkedList<>();
@@ -71,6 +77,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public void onCreate() {
         super.onCreate();
         mySession = new MediaSessionCompat(this, Settings.APP_TAG);
+
 
         mySession.setCallback(new MediaSessionCompat.Callback() {
             @Override
@@ -87,6 +94,25 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             public void onStop() {
                 pause();
             }
+
+            @Override
+            public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
+                if (Intent.ACTION_MEDIA_BUTTON.equals(mediaButtonEvent.getAction())) {
+                    KeyEvent event = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                    if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode()) {
+                        resume();
+                        return true;
+                    } else if (KeyEvent.KEYCODE_MEDIA_PAUSE == event.getKeyCode()) {
+                        pause();
+                        return true;
+                    } else if (KeyEvent.KEYCODE_MEDIA_STOP == event.getKeyCode()) {
+                        pause();
+                        return true;
+                    }
+                }
+                return super.onMediaButtonEvent(mediaButtonEvent);
+            }
+
         });
         mySession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS | MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS);
     }
@@ -131,6 +157,9 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 playIntent.setAction(MEDIA_CONTROL_ACTION);
                 playIntent.putExtra("cmd", PLAY);
                 return PendingIntent.getService(this, PLAY, playIntent, 0);
+            case MAIN:
+                Intent resultIntent = new Intent(this, MainActivity.class);
+                return PendingIntent.getActivity(this, 0, resultIntent, 0);
         }
         return null;
     }
@@ -145,13 +174,17 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, tracks.peek().getName())
                 .build());
 
-        Notification.Builder builder = new Notification.Builder(this)
-                .setSmallIcon(R.drawable.ic_stat_music);
-        builder.setContentTitle(tracks.peek().getName())
-                .setContentText(tracks.peek().getArtist())
-                .setLargeIcon(artwork);
-
+        Notification notification = ongoingNotification;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+
+            Notification.Builder builder = new Notification.Builder(this)
+                    .setSmallIcon(R.drawable.ic_stat_music);
+            builder.setContentTitle(tracks.peek().getName())
+                    .setContentText(tracks.peek().getArtist())
+                    .setLargeIcon(artwork);
+
+            builder.setContentIntent(getIntentFor(MAIN));
+
             builder.setColor(Color.rgb(38, 50, 56));
             builder.setStyle(new Notification.MediaStyle()
                     .setMediaSession((MediaSession.Token) mySession.getSessionToken().getToken()));
@@ -163,28 +196,36 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             }
 
             builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Close", getIntentFor(CLOSE));
+
+            notification = builder.build();
+
+        } else if (notification == null) {
+            Notification.Builder builder = new Notification.Builder(this)
+                    .setSmallIcon(R.drawable.ic_stat_music);
+            builder.setContentTitle(tracks.peek().getName())
+                    .setContentText(tracks.peek().getArtist())
+                    .setLargeIcon(artwork);
+
+            builder.setContentIntent(getIntentFor(MAIN));
+            notification = builder.build();
+            notification.bigContentView = new RemoteViews(getPackageName(), R.layout.notification_layout);
+
         }
 
-        Notification noti = builder.build();
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.notification_layout);
-
-            contentView.setImageViewBitmap(R.id.thumbnail_notification_tv, artwork);
-            contentView.setTextViewText(R.id.trackname_notification_tv, tracks.peek().getName());
-            contentView.setTextViewText(R.id.artistname_notification_tv, tracks.peek().getArtist());
+        if (notification != null) {
+            notification.bigContentView.setImageViewBitmap(R.id.thumbnail_notification_tv, artwork);
+            notification.bigContentView.setTextViewText(R.id.trackname_notification_tv, tracks.peek().getName());
+            notification.bigContentView.setTextViewText(R.id.artistname_notification_tv, tracks.peek().getArtist());
 
             if (state == PlaybackStateCompat.STATE_PLAYING) {
-                contentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PAUSE));
-                contentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.pause);
+                notification.bigContentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PAUSE));
+                notification.bigContentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.pause);
             } else {
-                contentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PLAY));
-                contentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.play);
+                notification.bigContentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PLAY));
+                notification.bigContentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.play);
             }
 
-            contentView.setOnClickPendingIntent(R.id.close_notification_bt, getIntentFor(CLOSE));
-
-            noti.bigContentView = contentView;
+            notification.bigContentView.setOnClickPendingIntent(R.id.close_notification_bt, getIntentFor(CLOSE));
         }
 
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
@@ -195,11 +236,13 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         PlaybackStateCompat pbackState = stateBuilder.build();
         mySession.setPlaybackState(pbackState);
 
-        startForeground(NOTIFICATION_ID, noti);
+        ongoingNotification = notification;
+        startForeground(NOTIFICATION_ID, ongoingNotification);
     }
 
     public void stopNotification() {
         stopForeground(true);
+        ongoingNotification = null;
         mySession.setActive(false);
     }
 
@@ -299,7 +342,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
 
     public void pause() {
-        if (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized())) {
+        if (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized()) &&
+                state != PlaybackStateCompat.STATE_PAUSED) {
             state = PlaybackStateCompat.STATE_PAUSED;
             if (mPlayer != null) {
                 mPlayer.pause();
@@ -309,7 +353,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     public void resume() {
-        if (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized())) {
+        if (Settings.MOCK_SPOTIFY_PLAYER || (mPlayer != null && mPlayer.isInitialized()) &&
+                state != PlaybackStateCompat.STATE_PLAYING) {
             state = PlaybackStateCompat.STATE_PLAYING;
             if (mPlayer != null) {
                 mPlayer.resume();

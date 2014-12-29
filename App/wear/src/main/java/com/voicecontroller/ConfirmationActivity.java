@@ -1,9 +1,12 @@
 package com.voicecontroller;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.support.wearable.view.DelayedConfirmationView;
 import android.support.wearable.view.WatchViewStub;
@@ -13,7 +16,9 @@ import android.widget.TextView;
 
 
 public class ConfirmationActivity extends Activity
-        implements DelayedConfirmationView.DelayedConfirmationListener{
+        implements DelayedConfirmationView.DelayedConfirmationListener, MessageCallback {
+
+    private static final int CONFIRMATION_ACTIVITY_CODE = 5;
 
     private DelayedConfirmationView mDelayedView;
 
@@ -74,9 +79,8 @@ public class ConfirmationActivity extends Activity
     @Override
     public void onTimerFinished(View view) {
         if (trackConfirmed) {
-            MobileConnection.getInstance().confirmTrack(trackUri);
+            MobileConnection.getInstance().confirmTrack(trackUri, this);
         }
-        finish();
 
         if (mWakeLock.isHeld()) {
             mWakeLock.release();
@@ -84,9 +88,42 @@ public class ConfirmationActivity extends Activity
     }
 
     @Override
+    public void onMessageSent() {
+        Intent intent = new Intent(this, android.support.wearable.activity.ConfirmationActivity.class);
+        intent.putExtra(android.support.wearable.activity.ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                android.support.wearable.activity.ConfirmationActivity.SUCCESS_ANIMATION);
+        startActivityForResult(intent, CONFIRMATION_ACTIVITY_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CONFIRMATION_ACTIVITY_CODE) {
+            finish();
+        }
+    }
+
+    @Override
+    public void onMessageFailed() {
+        Intent intent = new Intent(this, android.support.wearable.activity.ConfirmationActivity.class);
+        intent.putExtra(android.support.wearable.activity.ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                android.support.wearable.activity.ConfirmationActivity.FAILURE_ANIMATION);
+        startActivityForResult(intent, CONFIRMATION_ACTIVITY_CODE);
+    }
+
+    @Override
     protected void onDestroy() {
-        image.recycle();
-        image = null;
+        if (image != null) {
+            new AsyncTask<Bitmap, Void, Void>() {
+                @Override
+                protected Void doInBackground(Bitmap... params) {
+                    if (params[0] != null && !params[0].isRecycled()) {
+                        params[0].recycle();
+                    }
+                    return null;
+                }
+            }.execute(image);
+        }
         super.onDestroy();
     }
 
