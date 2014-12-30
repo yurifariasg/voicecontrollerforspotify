@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
@@ -54,6 +55,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public static final int NEXT = 3;
     public static final int CLOSE = 5;
     public static final int MAIN = 6;
+    public static final int PREVIOUS = 7;
 
     public static final String MEDIA_CONTROL_ACTION = "com.voicecontroller.music.cmd";
     public static final String PLAY_CONTROL_ACTION = "com.voicecontroller.music.play";
@@ -109,11 +111,16 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                     } else if (KeyEvent.KEYCODE_MEDIA_STOP == event.getKeyCode()) {
                         pause();
                         return true;
+                    } else if (KeyEvent.KEYCODE_MEDIA_NEXT == event.getKeyCode()) {
+                        next();
+                        return true;
+                    } else if (KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
+                        previous();
+                        return true;
                     }
                 }
                 return super.onMediaButtonEvent(mediaButtonEvent);
             }
-
         });
         mySession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS | MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS);
     }
@@ -131,7 +138,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             }
             mPlayer = null;
         }
-        stopNotification();
+        stopNotification(true);
         mySession.release();
         super.onDestroy();
     }
@@ -148,6 +155,11 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 nextIntent.setAction(MEDIA_CONTROL_ACTION);
                 nextIntent.putExtra("cmd", NEXT);
                 return PendingIntent.getService(this, NEXT, nextIntent, 0);
+            case PREVIOUS:
+                Intent previousIntent = new Intent(this, NativePlayer.class);
+                previousIntent.setAction(MEDIA_CONTROL_ACTION);
+                previousIntent.putExtra("cmd", PREVIOUS);
+                return PendingIntent.getService(this, PREVIOUS, previousIntent, 0);
             case CLOSE:
                 Intent closeIntent = new Intent(this, NativePlayer.class);
                 closeIntent.setAction(MEDIA_CONTROL_ACTION);
@@ -187,16 +199,17 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             builder.setContentIntent(getIntentFor(MAIN));
 
             builder.setColor(Color.rgb(38, 50, 56));
-            builder.setStyle(new Notification.MediaStyle()
+            builder.setStyle(new Notification.MediaStyle().setShowActionsInCompactView(1, 2)
                     .setMediaSession((MediaSession.Token) mySession.getSessionToken().getToken()));
 
+            builder.addAction(android.R.drawable.ic_media_previous, "Previous", getIntentFor(PREVIOUS));
             if (state == PlaybackStateCompat.STATE_PLAYING) {
                 builder.addAction(android.R.drawable.ic_media_pause, "Pause", getIntentFor(PAUSE));
             } else {
                 builder.addAction(android.R.drawable.ic_media_play, "Play", getIntentFor(PLAY));
             }
 
-            builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Close", getIntentFor(CLOSE));
+            builder.addAction(android.R.drawable.ic_media_next, "Next", getIntentFor(NEXT));
 
             notification = builder.build();
 
@@ -220,31 +233,41 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
             if (state == PlaybackStateCompat.STATE_PLAYING) {
                 notification.bigContentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PAUSE));
-                notification.bigContentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.pause);
+                notification.bigContentView.setImageViewResource(R.id.play_pause_notification_bt, android.R.drawable.ic_media_pause);
             } else {
                 notification.bigContentView.setOnClickPendingIntent(R.id.play_pause_notification_bt, getIntentFor(PLAY));
-                notification.bigContentView.setImageViewResource(R.id.play_pause_notification_bt, R.drawable.play);
+                notification.bigContentView.setImageViewResource(R.id.play_pause_notification_bt, android.R.drawable.ic_media_play);
             }
 
+            notification.bigContentView.setOnClickPendingIntent(R.id.previous_notification_bt, getIntentFor(PREVIOUS));
+            notification.bigContentView.setOnClickPendingIntent(R.id.next_notification_bt, getIntentFor(NEXT));
             notification.bigContentView.setOnClickPendingIntent(R.id.close_notification_bt, getIntentFor(CLOSE));
         }
 
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
         stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE |
-                PlaybackStateCompat.ACTION_PAUSE);
+                PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
         stateBuilder.setState(state, 0, 1);
 
         PlaybackStateCompat pbackState = stateBuilder.build();
         mySession.setPlaybackState(pbackState);
 
         ongoingNotification = notification;
-        startForeground(NOTIFICATION_ID, ongoingNotification);
+        if (state != PlaybackStateCompat.STATE_PAUSED) {
+            startForeground(NOTIFICATION_ID, ongoingNotification);
+        } else {
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+            notificationManager.notify(NOTIFICATION_ID, ongoingNotification);
+        }
     }
 
-    public void stopNotification() {
-        stopForeground(true);
-        ongoingNotification = null;
+    public void stopNotification(boolean clearNotification) {
+        stopForeground(clearNotification);
         mySession.setActive(false);
+        if (clearNotification) {
+            ongoingNotification = null;
+        }
     }
 
     @Override
@@ -261,7 +284,10 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                         pause();
                         break;
                     case NEXT:
-                        playNext();
+                        next();
+                        break;
+                    case PREVIOUS:
+                        previous();
                         break;
                     case CLOSE:
                         close();
@@ -274,6 +300,10 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
                 Parcelable[] parcelables = intent.getParcelableArrayExtra("tracks");
                 Track[] incomingTracks = null;
+
+                if (!shouldEnqueue) {
+                    tracks.clear();
+                }
 
                 if (parcelables != null && parcelables.length > 0) {
                     for (Parcelable p : parcelables) {
@@ -300,7 +330,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 } else if (Settings.MOCK_SPOTIFY_PLAYER) {
                     play();
                 } else if (!shouldEnqueue) {
-                    playNext();
+                    play();
                 }
             }
         }
@@ -355,9 +385,22 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             state = PlaybackStateCompat.STATE_PAUSED;
             if (mPlayer != null) {
                 mPlayer.pause();
+                stopNotification(false);
             }
             updateTrackMetadata();
         }
+    }
+
+    public void next() {
+        if (tracks.size() <= 1) {
+            pause();
+        } else {
+            playNext();
+        }
+    }
+
+    public void previous() {
+        mPlayer.seekToPosition(0);
     }
 
     public void resume() {
@@ -386,7 +429,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         if (!tracks.isEmpty()) {
             tracks.remove();
             if (tracks.isEmpty()) {
-                stopNotification();
+                stopNotification(false);
             } else {
                 play();
             }
@@ -407,7 +450,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     @Override
     public void onPlaybackEvent(EventType eventType, PlayerState playerState) {
         if (eventType.equals(EventType.LOST_PERMISSION)) {
-            stopNotification();
+            stopNotification(true);
         } else if (eventType.equals(EventType.END_OF_CONTEXT)) {
             playNext();
         } else if (eventType.equals(EventType.TRACK_START)) {

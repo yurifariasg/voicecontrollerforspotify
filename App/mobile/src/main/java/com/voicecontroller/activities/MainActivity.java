@@ -4,8 +4,11 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,8 +24,13 @@ import com.voicecontroller.callbacks.OnProfileAcquired;
 import com.voicecontroller.fragments.LoginFragment;
 import com.voicecontroller.fragments.ProfileFragment;
 import com.voicecontroller.models.Profile;
+import com.voicecontroller.models.QueryResults;
+import com.voicecontroller.models.QueryType;
+import com.voicecontroller.models.Track;
+import com.voicecontroller.nativeplayer.NativePlayer;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
+import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
 import java.lang.ref.WeakReference;
@@ -46,6 +54,35 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             crashlytics = new Crashlytics();
         }
         Fabric.with(this, crashlytics);
+
+        if (Settings.MOCK_WATCH_REQUEST) {
+            final MainActivity me = this;
+            new AsyncTask<Void,Void,Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    try {
+                        QueryResults results = SpotifyWebAPI.search("rise against", QueryType.DEFAULT);
+                        results.fetchTracks();
+                        Intent intent = new Intent(me, NativePlayer.class);
+                        intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+
+                        Track[] tracks = results.getTracks();
+                        Parcelable[] parcelables = new Parcelable[tracks.length];
+                        for (int i = 0; i < tracks.length; i++) {
+                            parcelables[i] = tracks[i].toBundle();
+                        }
+                        intent.putExtra("tracks", parcelables);
+                        if (results.getQuery() != null) {
+                            intent.putExtra("enqueue", results.getQuery().shouldEnqueue());
+                        }
+                        startService(intent);
+                    } catch (Exception e) {
+                        Log.e(Settings.APP_TAG, "Exception", e);
+                    }
+                    return null;
+                }
+            }.execute();
+        }
 
         mainActivity = new WeakReference<>(this);
         setContentView(R.layout.activity_main);
