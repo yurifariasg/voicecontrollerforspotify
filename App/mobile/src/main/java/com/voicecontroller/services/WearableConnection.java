@@ -12,6 +12,7 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Wearable;
 import com.voicecontroller.models.Track;
+import com.voicecontroller.models.VoiceQueryResult;
 import com.voicecontroller.models.WearableMessage;
 import com.voicecontroller.settings.Settings;
 
@@ -41,12 +42,12 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
         }
     }
 
-    public void requestConfirmation(Track track) throws UnsupportedEncodingException {
+    public void requestConfirmation(VoiceQueryResult results, Context context) throws UnsupportedEncodingException {
         WearableMessage message = new WearableMessage();
         message.path = "confirmation";
 
-        if (track != null) {
-            DataMap trackMap = track.toDataMap();
+        if (results != null) {
+            DataMap trackMap = results.toDataMap(context);
             trackMap.putInt("confirmation_time", Settings.getConfirmationTime());
             message.data = trackMap.toByteArray();
         }

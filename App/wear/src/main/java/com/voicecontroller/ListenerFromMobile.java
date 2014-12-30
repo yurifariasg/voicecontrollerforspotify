@@ -25,13 +25,13 @@ public class ListenerFromMobile extends WearableListenerService {
                 data = DataMap.fromByteArray(messageEvent.getData());
             }
 
-            if (path.equalsIgnoreCase("confirmation") && data != null && data.getString("uri") != null) {
+            if (path.equalsIgnoreCase("confirmation") && data != null && data.getString("id") != null) {
                 Intent i = new Intent(this, ConfirmationActivity.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra("trackName", data.getString("name"));
-                i.putExtra("artistName", data.getString("artist"));
-                i.putExtra("image", data.getByteArray("image_blurred"));
-                i.putExtra("trackUri", data.getString("uri"));
+                i.putExtra("trackName", data.getString("title"));
+                i.putExtra("artistName", data.getString("subtitle"));
+                i.putExtra("image", data.getByteArray("image"));
+                i.putExtra("trackUri", data.getString("id"));
                 i.putExtra("confirmation_time", data.getInt("confirmation_time"));
                 startActivity(i);
             }

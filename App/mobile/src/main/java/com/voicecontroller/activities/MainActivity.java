@@ -5,7 +5,6 @@ import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -19,6 +18,8 @@ import com.crashlytics.android.Crashlytics;
 import com.voicecontroller.R;
 import com.voicecontroller.fragments.HelpFragment;
 import com.voicecontroller.fragments.SettingsFragment;
+import com.voicecontroller.models.QueryResults;
+import com.voicecontroller.models.QueryType;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.nativeplayer.NativePlayer;
 import com.voicecontroller.settings.Settings;
@@ -32,6 +33,8 @@ import com.voicecontroller.utils.SpotifyWebAPI;
 
 import java.lang.ref.WeakReference;
 
+import io.fabric.sdk.android.Fabric;
+
 
 public class MainActivity extends FragmentActivity implements View.OnClickListener, OnProfileAcquired {
 
@@ -43,34 +46,13 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (Settings.ENABLE_CRASHLYTICS) {
-            Crashlytics.start(this);
+            Fabric.with(this, new Crashlytics());
         }
 
         mainActivity = new WeakReference<>(this);
         setContentView(R.layout.activity_main);
         fl = (FrameLayout) findViewById(R.id.main_layout);
         initializeScreen();
-
-        if (Settings.EMULATOR_DEBUGGING_ACTIVE) {
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... params) {
-
-                    try {
-                        Track t = SpotifyWebAPI.searchTrack("Call Atlantis", mainActivity.get());
-                        Intent i = new Intent(mainActivity.get(), NativePlayer.class);
-                        i.setAction(NativePlayer.PLAY_CONTROL_ACTION);
-                        i.putExtra("track", t.toBundle());
-                        startService(i);
-
-                    } catch (Exception e) {
-                        Log.e("Exception", "Exception", e);
-                    }
-
-                    return null;
-                }
-            }.execute();
-        }
     }
 
     @Override

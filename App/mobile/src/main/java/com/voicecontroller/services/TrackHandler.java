@@ -7,7 +7,9 @@ import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.voicecontroller.exceptions.NoTrackFoundException;
+import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.Track;
+import com.voicecontroller.models.VoiceQuery;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
@@ -19,27 +21,27 @@ import java.io.UnsupportedEncodingException;
 
 public class TrackHandler {
 
-    public static Track lookForTrack(String queryName, WearableConnection connection, Context context) throws NoTrackFoundException, JSONException, UnsupportedEncodingException {
+    public static QueryResults lookForTrack(VoiceQuery query, WearableConnection connection, Context context) throws NoTrackFoundException, JSONException, UnsupportedEncodingException {
 
-        Track track = null;
+        QueryResults results = null;
         int retries = 0;
         boolean shouldRetry = true;
         while (shouldRetry && retries < Settings.SEARCH_TRACK_MAXIMUM_RETRIES) {
-
             try {
-                track = SpotifyWebAPI.searchTrack(queryName, context);
+                results = SpotifyWebAPI.search(query.getQuery(), query.getType());
                 shouldRetry = false;
             } catch (IOException e) {
                 retries++;
             }
         }
 
-        if (track != null) {
-            connection.requestConfirmation(track);
+        if (results != null) {
+            results.setVoiceQuery(query);
+            connection.requestConfirmation(results.toQueryResult(), context);
         } else {
             throw new NoTrackFoundException();
         }
-        return track;
+        return results;
     }
 
     public static void playTrack(String trackUri, WearableConnection connection, Context context) {

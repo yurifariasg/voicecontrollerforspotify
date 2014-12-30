@@ -3,15 +3,15 @@ package com.voicecontroller.nativeplayer;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.session.MediaSession;
-import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.media.MediaMetadataCompat;
@@ -22,6 +22,7 @@ import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
 import com.crashlytics.android.Crashlytics;
+import com.google.android.gms.internal.le;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.playback.Config;
 import com.spotify.sdk.android.playback.ConnectionStateCallback;
@@ -37,6 +38,7 @@ import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -77,7 +79,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public void onCreate() {
         super.onCreate();
         mySession = new MediaSessionCompat(this, Settings.APP_TAG);
-
 
         mySession.setCallback(new MediaSessionCompat.Callback() {
             @Override
@@ -124,7 +125,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             Spotify.destroyPlayer(this);
             try {
                 mPlayer.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 Log.e("NativePlayer", "Raised exceptiong when awaiting termination...", e);
                 Crashlytics.logException(e);
             }
@@ -268,12 +269,19 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                     default:
                         break;
                 }
-
             } else if (intent.getAction().equals(PLAY_CONTROL_ACTION)) {
-                Track track = Track.fromBundle(intent.getBundleExtra("track"));
+                boolean shouldEnqueue = intent.getBooleanExtra("enqueue", false);
 
-                if (track != null) {
-                    tracks.add(track);
+                Parcelable[] parcelables = intent.getParcelableArrayExtra("tracks");
+                Track[] incomingTracks = null;
+
+                if (parcelables != null && parcelables.length > 0) {
+                    for (Parcelable p : parcelables) {
+                        Track t = Track.fromBundle((Bundle) p);
+                        if (t != null) {
+                            tracks.add(t);
+                        }
+                    }
                 }
 
                 // Initialization.
@@ -291,7 +299,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                     }
                 } else if (Settings.MOCK_SPOTIFY_PLAYER) {
                     play();
-                } else {
+                } else if (!shouldEnqueue) {
                     playNext();
                 }
             }
@@ -377,7 +385,11 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public void playNext() {
         if (!tracks.isEmpty()) {
             tracks.remove();
-            play();
+            if (tracks.isEmpty()) {
+                stopNotification();
+            } else {
+                play();
+            }
         }
     }
 
@@ -394,9 +406,10 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onPlaybackEvent(EventType eventType, PlayerState playerState) {
-        if (eventType.equals(EventType.LOST_PERMISSION) || eventType.equals(EventType.END_OF_CONTEXT)) {
+        if (eventType.equals(EventType.LOST_PERMISSION)) {
             stopNotification();
-            mySession.setActive(false);
+        } else if (eventType.equals(EventType.END_OF_CONTEXT)) {
+            playNext();
         } else if (eventType.equals(EventType.TRACK_START)) {
             mySession.setActive(true);
         }
@@ -410,7 +423,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onError(Throwable throwable) {
-        Log.e("NativePlayer", "onError Spotify Initialization Error", throwable);
         Crashlytics.logException(throwable);
         close();
     }
@@ -426,7 +438,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public void onLoginFailed(Throwable throwable) {
-        Log.e("NativePlayer", "SpotifySDK Connection: onLoginFailed", throwable);
         Crashlytics.logException(throwable);
     }
 

@@ -17,6 +17,7 @@ public class LaunchActivity extends Activity implements MessageCallback {
 
     private static final long MINIMUM_QUERY_TIME_IN_MS = 3000;
     private static final int SPEECH_REQUEST_CODE = 0;
+    private static final boolean SHOULD_FAKE_QUERY = true;
 
     private String query;
 
@@ -70,6 +71,8 @@ public class LaunchActivity extends Activity implements MessageCallback {
             startTimestamp = System.currentTimeMillis();
 
             MobileConnection.getInstance().sendQuery(query, this);
+        } else if (SHOULD_FAKE_QUERY) {
+            handleQuery("Anavae World in a Bottle next");
         } else {
             displaySpeechRecognizer();
         }

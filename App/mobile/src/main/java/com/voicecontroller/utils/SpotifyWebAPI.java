@@ -18,6 +18,8 @@ import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
+import com.voicecontroller.models.QueryResults;
+import com.voicecontroller.models.QueryType;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.callbacks.OnProfileAcquired;
 import com.voicecontroller.models.Profile;
@@ -225,77 +227,71 @@ public class SpotifyWebAPI {
         return null;
     }
 
-    public static Track searchTrack(String trackName, Context context) throws JSONException, IOException {
-        String url = BASE_URL + SEARCH_API + "?q=" + URLEncoder.encode(trackName, DEFAULT_ENCODING) +
-                "&type=track";
-        String result = get(url, null);
+    public static QueryResults search(String query, QueryType type) throws JSONException, IOException {
+        String url = BASE_URL + SEARCH_API + "?q=" + URLEncoder.encode(query, DEFAULT_ENCODING);
+        switch (type) {
+            case ARTIST:
+                url += "&type=artist";
+                break;
+            case TRACK:
+                url += "&type=track";
+                break;
+            default:
+                url += "&type=track,artist";
+                break;
+        }
 
+        String result = get(url, null);
         JSONObject json = new JSONObject(result);
 
-        JSONArray items = json.getJSONObject("tracks").getJSONArray("items");
+        if (json.has("artists") && json.getJSONObject("artists").getJSONArray("items").length() > 0) {
 
-        if (items.length() > 0) {
+            JSONObject artistJson = json.getJSONObject("artists").getJSONArray("items").getJSONObject(0);
 
-            json = items.getJSONObject(0);
-            String uri = json.getString("uri");
-            String id = json.getString("id");
-            String name = json.getString("name");
-            JSONArray artists = json.getJSONArray("artists");
+            byte[] img = getImageFromArray(artistJson.getJSONArray("images"));
+
+            return new QueryResults(artistJson.getString("id"), artistJson.getString("uri"), artistJson.getString("name"), img, QueryType.ARTIST);
+
+        } else if (json.has("tracks") && json.getJSONObject("tracks").getJSONArray("items").length() > 0) {
+
+            JSONObject trackJson = json.getJSONObject("tracks").getJSONArray("items").getJSONObject(0);
+
+            String uri = trackJson.getString("uri");
+            String id = trackJson.getString("id");
+            String name = trackJson.getString("name");
+            JSONArray artists = trackJson.getJSONArray("artists");
             String artist = "";
             if (artists.length() > 0) {
                 artist = artists.getJSONObject(0).getString("name");
             }
 
             byte[] img = null;
-            if (json.has("album") && json.getJSONObject("album").has("images")) {
-                JSONArray images = json.getJSONObject("album").getJSONArray("images");
-                if (images.length() > 0) {
-
-                    // We expect that the array is sorted.
-                    String imageUrl = "";
-                    for (int i = 0 ; i < images.length() ; i++) {
-                        if (images.getJSONObject(i).getInt("width") > MINIMUM_WIDTH) {
-                            imageUrl = images.getJSONObject(i).getString("url");
-                        }
-                    }
-                    if (imageUrl != null && !imageUrl.isEmpty()) {
-                        img = downloadImage(imageUrl);
-                    }
-                }
+            if (trackJson.has("album") && trackJson.getJSONObject("album").has("images")) {
+                JSONArray images = trackJson.getJSONObject("album").getJSONArray("images");
+                img = getImageFromArray(images);
             }
 
-            byte[] blurredImage = null;
-
-            if (img != null) {
-                // Blur image
-                Bitmap b = BitmapFactory.decodeByteArray(img, 0, img.length);
-                if (b.getWidth() != 300 || b.getHeight() != 300) {
-                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, 300, 300, true);
-                    b.recycle();
-                    b = scaledBitmap;
-                }
-
-                float blur = Settings.getBlur();
-                if (blur > 0) {
-                    RenderScript rs = RenderScript.create(context);
-                    final Allocation input = Allocation.createFromBitmap(rs, b);
-                    final Allocation output = Allocation.createTyped(rs, input.getType());
-                    final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-                    script.setRadius(Settings.getBlur());
-                    script.setInput(input);
-                    script.forEach(output);
-                    output.copyTo(b);
-                }
-
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                b.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                blurredImage = stream.toByteArray();
-            }
-
-            return new Track(id, name, artist, uri, img, blurredImage);
+            Track[] track = new Track[] {new Track(id, name, artist, uri, img)};
+            return new QueryResults(id, uri, name, artist, img, QueryType.TRACK, track);
         } else {
             return null;
         }
+    }
+
+    private static byte[] getImageFromArray(JSONArray images) throws JSONException {
+        if (images.length() > 0) {
+            // We expect that the array is sorted.
+            String imageUrl = "";
+            for (int i = 0 ; i < images.length() ; i++) {
+                if (images.getJSONObject(i).getInt("width") > MINIMUM_WIDTH) {
+                    imageUrl = images.getJSONObject(i).getString("url");
+                }
+            }
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                return downloadImage(imageUrl);
+            }
+        }
+        return null;
     }
 
     public static byte[] downloadImage(String imageUrl) {
