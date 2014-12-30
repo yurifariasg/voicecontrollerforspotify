@@ -13,6 +13,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.service.notification.NotificationListenerService;
+import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.media.MediaMetadataCompat;
@@ -30,10 +32,12 @@ import com.spotify.sdk.android.playback.ConnectionStateCallback;
 import com.spotify.sdk.android.playback.Player;
 import com.spotify.sdk.android.playback.PlayerNotificationCallback;
 import com.spotify.sdk.android.playback.PlayerState;
+import com.spotify.sdk.android.playback.PlayerStateCallback;
 import com.voicecontroller.R;
 import com.voicecontroller.activities.MainActivity;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
 import com.voicecontroller.models.Track;
+import com.voicecontroller.models.TrackQueue;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
@@ -63,13 +67,13 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     private int state;
 
     private Player mPlayer;
-    private Queue<Track> tracks;
+    private TrackQueue tracks;
     private MediaSessionCompat mySession;
 
     private Notification ongoingNotification;
 
     public NativePlayer() {
-        tracks = new LinkedList<>();
+        tracks = new TrackQueue();
     }
 
     @Override
@@ -194,7 +198,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                     .setSmallIcon(R.drawable.ic_stat_music);
             builder.setContentTitle(tracks.peek().getName())
                     .setContentText(tracks.peek().getArtist())
-                    .setLargeIcon(artwork);
+                    .setLargeIcon(artwork)
+                    .setDeleteIntent(getIntentFor(CLOSE));
 
             builder.setContentIntent(getIntentFor(MAIN));
 
@@ -218,7 +223,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                     .setSmallIcon(R.drawable.ic_stat_music);
             builder.setContentTitle(tracks.peek().getName())
                     .setContentText(tracks.peek().getArtist())
-                    .setLargeIcon(artwork);
+                    .setLargeIcon(artwork)
+                    .setDeleteIntent(getIntentFor(CLOSE));;
 
             builder.setContentIntent(getIntentFor(MAIN));
             notification = builder.build();
@@ -400,7 +406,29 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     public void previous() {
-        mPlayer.seekToPosition(0);
+        if (mPlayer != null && mPlayer.isInitialized()) {
+            mPlayer.getPlayerState(new PlayerStateCallback() {
+                @Override
+                public void onPlayerState(PlayerState playerState) {
+                    int positionMs = playerState.positionInMs;
+                    if (positionMs < 3000) {
+                        playPrevious();
+                    } else {
+                        mPlayer.seekToPosition(0);
+                    }
+
+                }
+            });
+        }
+    }
+
+    private void playPrevious() {
+        Track previousSong = tracks.previous();
+        if (previousSong != null) {
+            play();
+        } else {
+            pause();
+        }
     }
 
     public void resume() {

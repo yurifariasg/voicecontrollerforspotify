@@ -290,7 +290,6 @@ public class SpotifyWebAPI {
             countryCode = "US";
         }
         String url = BASE_URL + ARTISTS_BASE + artistId + TOP_TRACKS_ENDPOINT + "?country=" + countryCode;
-        Log.i(Settings.APP_TAG, url);
         String response = get(url, null);
         JSONObject responseJson = new JSONObject(response);
 
