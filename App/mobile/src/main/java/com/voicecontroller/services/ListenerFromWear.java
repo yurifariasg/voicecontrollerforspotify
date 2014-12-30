@@ -16,6 +16,7 @@ import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
+import com.voicecontroller.BuildConfig;
 import com.voicecontroller.R;
 import com.voicecontroller.exceptions.NoTrackFoundException;
 import com.voicecontroller.models.QueryResults;
@@ -28,6 +29,7 @@ import com.voicecontroller.nativeplayer.NativePlayer;
 import org.json.JSONException;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -41,10 +43,13 @@ public class ListenerFromWear extends WearableListenerService {
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         super.onMessageReceived(messageEvent);
-
-        if (Settings.ENABLE_CRASHLYTICS) {
-            Fabric.with(this, new Crashlytics());
+        Crashlytics crashlytics;
+        if (BuildConfig.DEBUG) {
+            crashlytics = new Crashlytics.Builder().disabled(BuildConfig.DEBUG).build();
+        } else {
+            crashlytics = new Crashlytics();
         }
+        Fabric.with(this, crashlytics);
 
         String nodeId = messageEvent.getSourceNodeId();
         String path = messageEvent.getPath();
@@ -58,24 +63,21 @@ public class ListenerFromWear extends WearableListenerService {
             } else if (path.equalsIgnoreCase("confirm_track")) {
                 onConfirmationReceived(data.getString("uri"), connection);
             } else if (path.equalsIgnoreCase("wear_error")) {
-                if (Settings.ENABLE_CRASHLYTICS) {
-                    DataMap map = DataMap.fromByteArray(messageEvent.getData());
+                DataMap map = DataMap.fromByteArray(messageEvent.getData());
+                try (
+                    ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
+                    ObjectInputStream ois = new ObjectInputStream(bis);
+                ) {
+                    Throwable ex = (Throwable) ois.readObject();
 
-                    try (
-                        ByteArrayInputStream bis = new ByteArrayInputStream(map.getByteArray("exception"));
-                        ObjectInputStream ois = new ObjectInputStream(bis);
-                    ) {
-                        Throwable ex = (Throwable) ois.readObject();
-
-                        Crashlytics.setBool("wear_exception", true);
-                        Crashlytics.setString("board", map.getString("board"));
-                        Crashlytics.setString("fingerprint", map.getString("fingerprint"));
-                        Crashlytics.setString("model", map.getString("model"));
-                        Crashlytics.setString("manufacturer", map.getString("manufacturer"));
-                        Crashlytics.setString("product", map.getString("product"));
-                        Crashlytics.logException(ex);
-                    } catch (Exception e) { Crashlytics.logException(e); }
-                }
+                    Crashlytics.setBool("wear_exception", true);
+                    Crashlytics.setString("board", map.getString("board"));
+                    Crashlytics.setString("fingerprint", map.getString("fingerprint"));
+                    Crashlytics.setString("model", map.getString("model"));
+                    Crashlytics.setString("manufacturer", map.getString("manufacturer"));
+                    Crashlytics.setString("product", map.getString("product"));
+                    Crashlytics.logException(ex);
+                } catch (Exception e) { Crashlytics.logException(e); }
             }
 
         } catch (Exception e) {
@@ -117,12 +119,17 @@ public class ListenerFromWear extends WearableListenerService {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                executeConfirmation(results, connection);
+                try {
+                    executeConfirmation(results, connection);
+                } catch (Exception e) {
+                    Log.e(Settings.APP_TAG, "Exception", e);
+                    Crashlytics.logException(e);
+                }
                 return null;
             }
         }.execute();
     }
-    private void executeConfirmation(QueryResults results, WearableConnection connection) {
+    private void executeConfirmation(QueryResults results, WearableConnection connection) throws JSONException, IOException {
         if (results != null) {
             if (Settings.shouldUseNativePlayer()) {
                 results.fetchTracks();

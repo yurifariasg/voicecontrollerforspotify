@@ -4,10 +4,8 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,14 +13,10 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
+import com.voicecontroller.BuildConfig;
 import com.voicecontroller.R;
 import com.voicecontroller.fragments.HelpFragment;
 import com.voicecontroller.fragments.SettingsFragment;
-import com.voicecontroller.models.QueryResults;
-import com.voicecontroller.models.QueryType;
-import com.voicecontroller.models.Track;
-import com.voicecontroller.nativeplayer.NativePlayer;
-import com.voicecontroller.settings.Settings;
 import com.voicecontroller.callbacks.OnProfileAcquired;
 import com.voicecontroller.fragments.LoginFragment;
 import com.voicecontroller.fragments.ProfileFragment;
@@ -45,9 +39,13 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Settings.ENABLE_CRASHLYTICS) {
-            Fabric.with(this, new Crashlytics());
+        Crashlytics crashlytics;
+        if (BuildConfig.DEBUG) {
+            crashlytics = new Crashlytics.Builder().disabled(BuildConfig.DEBUG).build();
+        } else {
+            crashlytics = new Crashlytics();
         }
+        Fabric.with(this, crashlytics);
 
         mainActivity = new WeakReference<>(this);
         setContentView(R.layout.activity_main);

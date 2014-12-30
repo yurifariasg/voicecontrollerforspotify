@@ -49,6 +49,8 @@ public class SpotifyWebAPI {
     private static final String REDIRECT_URI = "voice-controller-spotify://callback";
     private static final String BASE_URL = "https://api.spotify.com/v1/";
     private static final String ACCOUNTS_URL = "https://accounts.spotify.com/api/token";
+    private static final String ARTISTS_BASE = "artists/";
+    private static final String TOP_TRACKS_ENDPOINT = "/top-tracks";
     private static final String SEARCH_API = "search";
     private static final String USER_PROFILE = "me";
     private static final String DEFAULT_ENCODING = "UTF-8";
@@ -256,24 +258,54 @@ public class SpotifyWebAPI {
 
             JSONObject trackJson = json.getJSONObject("tracks").getJSONArray("items").getJSONObject(0);
 
-            String uri = trackJson.getString("uri");
-            String id = trackJson.getString("id");
-            String name = trackJson.getString("name");
-            JSONArray artists = trackJson.getJSONArray("artists");
-            String artist = "";
-            if (artists.length() > 0) {
-                artist = artists.getJSONObject(0).getString("name");
-            }
-
-            byte[] img = null;
-            if (trackJson.has("album") && trackJson.getJSONObject("album").has("images")) {
-                JSONArray images = trackJson.getJSONObject("album").getJSONArray("images");
-                img = getImageFromArray(images);
-            }
-
-            Track[] track = new Track[] {new Track(id, name, artist, uri, img)};
-            return new QueryResults(id, uri, name, artist, img, QueryType.TRACK, track);
+            Track track = createTrackFromJSON(trackJson);
+            Track[] tracks = new Track[] {track};
+            return new QueryResults(track.getId(), track.getUri(), track.getName(), track.getArtist(), track.getImage(), QueryType.TRACK, tracks);
         } else {
+            return null;
+        }
+    }
+
+    private static Track createTrackFromJSON(JSONObject trackJson) throws JSONException {
+        String uri = trackJson.getString("uri");
+        String id = trackJson.getString("id");
+        String name = trackJson.getString("name");
+        JSONArray artists = trackJson.getJSONArray("artists");
+        String artist = "";
+        if (artists.length() > 0) {
+            artist = artists.getJSONObject(0).getString("name");
+        }
+
+        byte[] img = null;
+        if (trackJson.has("album") && trackJson.getJSONObject("album").has("images")) {
+            JSONArray images = trackJson.getJSONObject("album").getJSONArray("images");
+            img = getImageFromArray(images);
+        }
+
+        return new Track(id, name, artist, uri, img);
+    }
+
+    public static Track[] getTopTracksForArtist(String artistId, String countryCode) throws IOException, JSONException {
+        if (countryCode == null) {
+            countryCode = "US";
+        }
+        String url = BASE_URL + ARTISTS_BASE + artistId + TOP_TRACKS_ENDPOINT + "?country=" + countryCode;
+        Log.i(Settings.APP_TAG, url);
+        String response = get(url, null);
+        JSONObject responseJson = new JSONObject(response);
+
+        if (responseJson.has("tracks")) {
+
+            JSONArray tracksJson = responseJson.getJSONArray("tracks");
+            Track[] tracks = new Track[tracksJson.length()];
+
+            for (int i = 0 ; i < tracksJson.length() ; i++) {
+                tracks[i] = createTrackFromJSON(tracksJson.getJSONObject(i));
+            }
+
+            return tracks;
+        } else {
+            Crashlytics.log("Could not request top tracks: " + response);
             return null;
         }
     }
