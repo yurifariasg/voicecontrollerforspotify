@@ -26,7 +26,7 @@ public class Settings {
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
     public static boolean ENABLE_CRASHLYTICS = true && !BuildConfig.DEBUG;
-    public static boolean MOCK_WATCH_REQUEST = true && BuildConfig.DEBUG;
+    public static boolean MOCK_WATCH_REQUEST = false && BuildConfig.DEBUG;
     public static boolean EMULATOR_DEBUGGING_ACTIVE = false && BuildConfig.DEBUG;
     public static boolean MOCK_SPOTIFY_PLAYER = false && BuildConfig.DEBUG;
     public static boolean USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY = false;

@@ -26,6 +26,8 @@ import android.widget.RemoteViews;
 
 import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.internal.le;
+import com.orm.query.Condition;
+import com.orm.query.Select;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.playback.Config;
 import com.spotify.sdk.android.playback.ConnectionStateCallback;
@@ -36,6 +38,7 @@ import com.spotify.sdk.android.playback.PlayerStateCallback;
 import com.voicecontroller.R;
 import com.voicecontroller.activities.MainActivity;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
+import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.models.TrackQueue;
 import com.voicecontroller.oauth.OAuthRecord;
@@ -455,10 +458,11 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     public void playNext() {
         if (!tracks.isEmpty()) {
-            tracks.remove();
-            if (tracks.isEmpty()) {
+            if (tracks.size() == 1) {
+                pause();
                 stopNotification(false);
             } else {
+                tracks.remove();
                 play();
             }
         }

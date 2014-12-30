@@ -1,10 +1,7 @@
 package com.voicecontroller.models;
 
-
 import com.voicecontroller.utils.SpotifyWebAPI;
-
 import org.json.JSONException;
-
 import java.io.IOException;
 
 public class QueryResults {
@@ -65,13 +62,11 @@ public class QueryResults {
         return tracks;
     }
 
-    public void fetchTracks() throws IOException, JSONException {
+    public void fetchTracks(String userCountryCode) throws IOException, JSONException {
         // If it is artists or playlist, fetch tracks.
-
         if (type.equals(QueryType.ARTIST)) {
-            tracks = SpotifyWebAPI.getTopTracksForArtist(id, null);
+            tracks = SpotifyWebAPI.getTopTracksForArtist(id, userCountryCode);
         }
-
     }
 
     public VoiceQueryResult toQueryResult() {

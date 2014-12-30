@@ -7,7 +7,6 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.os.PowerManager;
-import android.speech.tts.Voice;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
@@ -19,12 +18,15 @@ import com.google.android.gms.wearable.WearableListenerService;
 import com.voicecontroller.BuildConfig;
 import com.voicecontroller.R;
 import com.voicecontroller.exceptions.NoTrackFoundException;
+import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
-import com.voicecontroller.models.QueryType;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.models.VoiceQuery;
+import com.voicecontroller.oauth.OAuthRecord;
+import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.nativeplayer.NativePlayer;
+import com.voicecontroller.utils.SpotifyWebAPI;
 
 import org.json.JSONException;
 
@@ -120,7 +122,7 @@ public class ListenerFromWear extends WearableListenerService {
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    executeConfirmation(results, connection);
+                    executeConfirmationAsync(results, connection);
                 } catch (Exception e) {
                     Log.e(Settings.APP_TAG, "Exception", e);
                     Crashlytics.logException(e);
@@ -129,23 +131,37 @@ public class ListenerFromWear extends WearableListenerService {
             }
         }.execute();
     }
-    private void executeConfirmation(QueryResults results, WearableConnection connection) throws JSONException, IOException {
+    private void executeConfirmationAsync(QueryResults results, WearableConnection connection) throws JSONException, IOException {
         if (results != null) {
             if (Settings.shouldUseNativePlayer()) {
-                results.fetchTracks();
-                Intent intent = new Intent(this, NativePlayer.class);
-                intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+                OAuthRecord record = OAuthService.getOAuthToken();
+                if (!record.isValid()) {
+                    SpotifyWebAPI.refreshOAuth(record);
+                }
+                Profile profile = SpotifyWebAPI.getUserProfile(record, false);
+                if (profile == null || profile.countryCode == null) {
+                    Log.i(Settings.APP_TAG, "FORCING UPDATE");
+                    profile = SpotifyWebAPI.getUserProfile(record, true);
+                }
 
-                Track[] tracks = results.getTracks();
-                Parcelable[] parcelables = new Parcelable[tracks.length];
-                for (int i = 0 ; i < tracks.length ; i++) {
-                    parcelables[i] = tracks[i].toBundle();
+                if (profile != null) {
+                    results.fetchTracks(profile.countryCode);
+                    Intent intent = new Intent(this, NativePlayer.class);
+                    intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+
+                    Track[] tracks = results.getTracks();
+                    Parcelable[] parcelables = new Parcelable[tracks.length];
+                    for (int i = 0; i < tracks.length; i++) {
+                        parcelables[i] = tracks[i].toBundle();
+                    }
+                    intent.putExtra("tracks", parcelables);
+                    if (results.getQuery() != null) {
+                        intent.putExtra("enqueue", results.getQuery().shouldEnqueue());
+                    }
+                    startService(intent);
+                } else {
+                    Crashlytics.log("Still count not get a profile on execute confirmation.");
                 }
-                intent.putExtra("tracks", parcelables);
-                if (results.getQuery() != null) {
-                    intent.putExtra("enqueue", results.getQuery().shouldEnqueue());
-                }
-                startService(intent);
             } else {
                 PowerManager.WakeLock wl = null;
                 if (Settings.USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY) {

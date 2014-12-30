@@ -1,0 +1,1 @@
+alter table PROFILE add COUNTRY_CODE TEXT;

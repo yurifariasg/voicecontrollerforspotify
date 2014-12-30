@@ -12,15 +12,17 @@ public class Profile extends SugarRecord<Profile> {
     public String image;
     public OAuthRecord oauth;
     public String product;
+    public String countryCode;
 
     public Profile() {
     }
 
-    public Profile(String name, String image, OAuthRecord oauth, String product) {
+    public Profile(String name, String image, OAuthRecord oauth, String product, String countryCode) {
         this.name = name;
         this.image = image;
         this.oauth = oauth;
         this.product = product;
+        this.countryCode = countryCode;
     }
 
     // The two helper functions below are here because SugarRecord does not handle well byte[] type

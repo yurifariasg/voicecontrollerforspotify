@@ -62,7 +62,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 protected Void doInBackground(Void... params) {
                     try {
                         QueryResults results = SpotifyWebAPI.search("rise against", QueryType.DEFAULT);
-                        results.fetchTracks();
+                        results.fetchTracks("US");
                         Intent intent = new Intent(me, NativePlayer.class);
                         intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
 

@@ -2,15 +2,8 @@ package com.voicecontroller.utils;
 
 
 import android.app.Activity;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
@@ -20,7 +13,6 @@ import com.spotify.sdk.android.authentication.SpotifyAuthentication;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
 import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.QueryType;
-import com.voicecontroller.settings.Settings;
 import com.voicecontroller.callbacks.OnProfileAcquired;
 import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.Track;
@@ -175,7 +167,7 @@ public class SpotifyWebAPI {
 
             @Override
             protected Profile doInBackground(Void... params) {
-                return getUserProfile(oauth);
+                return getUserProfile(oauth, false);
             }
 
             @Override
@@ -188,7 +180,7 @@ public class SpotifyWebAPI {
         }.execute();
     }
 
-    public static Profile getUserProfile(OAuthRecord oauth) {
+    public static Profile getUserProfile(OAuthRecord oauth, boolean forceRequest) {
 
         if (oauth == null) {
             oauth = OAuthService.getOAuthToken();
@@ -196,7 +188,8 @@ public class SpotifyWebAPI {
 
         if (oauth != null) {
             Profile p = Select.from(Profile.class).where(Condition.prop("oauth").eq(oauth.getId())).first();
-            if (p == null) {
+            boolean updateRequest = (p != null && forceRequest);
+            if (p == null || forceRequest) {
                 try {
                     String response = get(BASE_URL + USER_PROFILE, oauth.access_token);
                     JSONObject json = new JSONObject(response);
@@ -206,6 +199,7 @@ public class SpotifyWebAPI {
                         name = json.getString("id");
                     }
                     String product = json.getString("product");
+                    String countryCode = json.getString("country");
 
                     String imgUrl = null;
                     JSONArray imgs = json.getJSONArray("images");
@@ -213,12 +207,18 @@ public class SpotifyWebAPI {
                         imgUrl = imgs.getJSONObject(0).getString("url");
                     }
 
-                    p = new Profile();
+                    if (p == null) {
+                        p = new Profile();
+                    }
                     p.name = name;
                     p.oauth = oauth;
                     p.product = product;
+                    p.countryCode = countryCode;
                     if (imgUrl != null) {
                         p.setImage(downloadImage(imgUrl));
+                    }
+                    if (updateRequest) {
+                        p.save();
                     }
                 } catch (Exception e) {
                     Log.w("SpotifyWebAPI", "Could not get user profile", e);
@@ -286,9 +286,6 @@ public class SpotifyWebAPI {
     }
 
     public static Track[] getTopTracksForArtist(String artistId, String countryCode) throws IOException, JSONException {
-        if (countryCode == null) {
-            countryCode = "US";
-        }
         String url = BASE_URL + ARTISTS_BASE + artistId + TOP_TRACKS_ENDPOINT + "?country=" + countryCode;
         String response = get(url, null);
         JSONObject responseJson = new JSONObject(response);
