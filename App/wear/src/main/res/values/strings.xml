@@ -2,6 +2,7 @@
 <resources>
 
     <string name="app_name">Voice Controller for Spotify (BETA)</string>
+    <string name="voice_app_name">Spotify Controller</string>
     <string name="starting_tune">Starting your tune…</string>
     <string name="sending">Sending</string>
     <string name="to_device">to your device</string>

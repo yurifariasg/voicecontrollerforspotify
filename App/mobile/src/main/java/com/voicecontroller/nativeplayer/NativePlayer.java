@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
@@ -39,6 +40,7 @@ import com.voicecontroller.R;
 import com.voicecontroller.activities.MainActivity;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
 import com.voicecontroller.models.Profile;
+import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.models.TrackQueue;
 import com.voicecontroller.oauth.OAuthRecord;
@@ -46,6 +48,9 @@ import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -281,7 +286,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
         if (intent != null && intent.getAction() != null) {
             if (intent.getAction().equals(MEDIA_CONTROL_ACTION)) {
                 int cmd = intent.getIntExtra("cmd", 0);
@@ -305,46 +309,60 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                         break;
                 }
             } else if (intent.getAction().equals(PLAY_CONTROL_ACTION)) {
-                boolean shouldEnqueue = intent.getBooleanExtra("enqueue", false);
 
-                Parcelable[] parcelables = intent.getParcelableArrayExtra("tracks");
-                Track[] incomingTracks = null;
+                QueryResults results = QueryResults.fromBundle(intent.getBundleExtra("result"));
+                handlePlayControlActionAsync(results);
 
-                if (!shouldEnqueue) {
-                    tracks.clear();
-                }
-
-                if (parcelables != null && parcelables.length > 0) {
-                    for (Parcelable p : parcelables) {
-                        Track t = Track.fromBundle((Bundle) p);
-                        if (t != null) {
-                            tracks.add(t);
-                        }
-                    }
-                }
-
-                // Initialization.
-                if ((mPlayer == null || !mPlayer.isInitialized() || mPlayer.isShutdown()) && !Settings.MOCK_SPOTIFY_PLAYER) {
-                    OAuthRecord record = OAuthService.getOAuthToken();
-                    if (record != null) {
-                        if (!record.isValid()) {
-                            SpotifyWebAPI.refreshOAuth(record, this);
-                        } else {
-                            initializePlayerWithToken(record);
-                        }
-                    } else {
-                        Log.w("NativePlayer", "No valid record found.");
-                        createOAuthErrorNotification();
-                    }
-                } else if (Settings.MOCK_SPOTIFY_PLAYER) {
-                    play();
-                } else if (!shouldEnqueue) {
-                    play();
-                }
             }
         }
 
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void handlePlayControlActionAsync(final QueryResults results) {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    handlePlayControlAction(results);
+                } catch (Exception e) {
+                    Log.e(Settings.APP_TAG, "Exception", e);
+                    Crashlytics.logException(e);
+                }
+                return null;
+            }
+        }.execute();
+    }
+
+    private void handlePlayControlAction(QueryResults results) throws JSONException, IOException {
+
+        OAuthRecord record = OAuthService.getOAuthToken();
+        if (record == null) {
+            createOAuthErrorNotification();
+            return;
+        } else if (!record.isValid()) {
+            SpotifyWebAPI.refreshOAuth(record);
+        }
+        Profile profile = SpotifyWebAPI.getUserProfile(record, false);
+        results.fetchTracks(profile);
+
+        boolean shouldEnqueue = results.getQuery().shouldEnqueue();
+
+        if (!shouldEnqueue) {
+            tracks.clear();
+        }
+
+        if (results.getTracks() != null) {
+            tracks.addAll(Arrays.asList(results.getTracks()));
+
+            if ((mPlayer == null || !mPlayer.isInitialized() || mPlayer.isShutdown()) && !Settings.MOCK_SPOTIFY_PLAYER) {
+                initializePlayerWithToken(record);
+            } else if (Settings.MOCK_SPOTIFY_PLAYER) {
+                play();
+            } else if (!shouldEnqueue) {
+                play();
+            }
+        }
     }
 
     @Override

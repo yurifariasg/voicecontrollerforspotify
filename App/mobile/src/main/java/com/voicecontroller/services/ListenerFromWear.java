@@ -83,7 +83,7 @@ public class ListenerFromWear extends WearableListenerService {
             }
 
         } catch (Exception e) {
-            Log.e("ListenerFromWear", e.getLocalizedMessage());
+            Log.e("ListenerFromWear", "Exception", e);
             Crashlytics.logException(e);
         }
     }
@@ -134,34 +134,12 @@ public class ListenerFromWear extends WearableListenerService {
     private void executeConfirmationAsync(QueryResults results, WearableConnection connection) throws JSONException, IOException {
         if (results != null) {
             if (Settings.shouldUseNativePlayer()) {
-                OAuthRecord record = OAuthService.getOAuthToken();
-                if (!record.isValid()) {
-                    SpotifyWebAPI.refreshOAuth(record);
-                }
-                Profile profile = SpotifyWebAPI.getUserProfile(record, false);
-                if (profile == null || profile.countryCode == null) {
-                    Log.i(Settings.APP_TAG, "FORCING UPDATE");
-                    profile = SpotifyWebAPI.getUserProfile(record, true);
-                }
 
-                if (profile != null) {
-                    results.fetchTracks(profile.countryCode);
-                    Intent intent = new Intent(this, NativePlayer.class);
-                    intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+                Intent intent = new Intent(this, NativePlayer.class);
+                intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
+                intent.putExtra("result", results.toBundle());
+                startService(intent);
 
-                    Track[] tracks = results.getTracks();
-                    Parcelable[] parcelables = new Parcelable[tracks.length];
-                    for (int i = 0; i < tracks.length; i++) {
-                        parcelables[i] = tracks[i].toBundle();
-                    }
-                    intent.putExtra("tracks", parcelables);
-                    if (results.getQuery() != null) {
-                        intent.putExtra("enqueue", results.getQuery().shouldEnqueue());
-                    }
-                    startService(intent);
-                } else {
-                    Crashlytics.log("Still count not get a profile on execute confirmation.");
-                }
             } else {
                 PowerManager.WakeLock wl = null;
                 if (Settings.USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY) {

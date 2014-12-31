@@ -9,10 +9,12 @@ import com.voicecontroller.oauth.OAuthRecord;
 public class Profile extends SugarRecord<Profile> {
 
     public String name;
+    public String spotifyId;
     public String image;
     public OAuthRecord oauth;
     public String product;
     public String countryCode;
+    public int lastPlaylistRefresh;
 
     public Profile() {
     }

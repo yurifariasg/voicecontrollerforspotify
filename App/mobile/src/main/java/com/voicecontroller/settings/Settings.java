@@ -25,6 +25,7 @@ public class Settings {
     // These are real constants
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
+    public static float MINIMUM_PLAYLIST_NAME_SIMILARITY = 0.7f; // 70%
     public static boolean ENABLE_CRASHLYTICS = true && !BuildConfig.DEBUG;
     public static boolean MOCK_WATCH_REQUEST = false && BuildConfig.DEBUG;
     public static boolean EMULATOR_DEBUGGING_ACTIVE = false && BuildConfig.DEBUG;
@@ -32,6 +33,7 @@ public class Settings {
     public static boolean USE_WAKELOCK_ON_SENDING_TRACK_TO_SPOTIFY = false;
     public static boolean USE_KEYGUARD_ON_SENDING_TRACK_TO_SPOTIFY = false;
     public static int SEARCH_TRACK_MAXIMUM_RETRIES = 5;
+    public static String[] SPOTIFY_USER_PERMISSIONS = new String[]{"user-read-private", "streaming", "playlist-read-private"};
 
     public static float getBlur() {
         Setting s = Select.from(Setting.class).where(Condition.prop("settingid").eq(ID.BLUR_IMAGES.val())).first();

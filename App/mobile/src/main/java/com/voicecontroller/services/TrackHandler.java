@@ -3,13 +3,16 @@ package com.voicecontroller.services;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
-
-import com.crashlytics.android.Crashlytics;
+import com.orm.query.Condition;
+import com.orm.query.Select;
 import com.voicecontroller.exceptions.NoTrackFoundException;
+import com.voicecontroller.models.Playlist;
+import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
-import com.voicecontroller.models.Track;
+import com.voicecontroller.models.QueryType;
 import com.voicecontroller.models.VoiceQuery;
+import com.voicecontroller.oauth.OAuthRecord;
+import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
 
@@ -17,6 +20,10 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
+
+import uk.ac.shef.wit.simmetrics.similaritymetrics.AbstractStringMetric;
+import uk.ac.shef.wit.simmetrics.similaritymetrics.Levenshtein;
 
 
 public class TrackHandler {
@@ -24,7 +31,57 @@ public class TrackHandler {
     public static QueryResults lookForTrack(VoiceQuery query, WearableConnection connection, Context context) throws NoTrackFoundException, JSONException, UnsupportedEncodingException {
 
         QueryResults results = null;
+        if (query.getType().equals(QueryType.PLAYLIST)) {
+            results = lookProfilePlaylists(query);
+        } else {
+            results = searchTrack(query);
+        }
+
+        if (results != null) {
+            results.setVoiceQuery(query);
+            connection.requestConfirmation(results.toQueryResult(), context);
+        } else {
+            throw new NoTrackFoundException();
+        }
+        return results;
+    }
+
+    private static QueryResults lookProfilePlaylists(VoiceQuery query) {
+        OAuthRecord record = OAuthService.getOAuthToken();
+        if (!record.isValid()) {
+            SpotifyWebAPI.refreshOAuth(record);
+        }
+        Profile profile = SpotifyWebAPI.getUserProfile(record, false);
+
+        List<Playlist> playlists = Select.from(Playlist.class).where(Condition.prop("PROFILE").eq(profile.getId())).list();
+
+        Playlist mostSimilarPlaylist = null;
+        float mostSimilarVal = 0;
+        float minimumSimilarityVal = Settings.MINIMUM_PLAYLIST_NAME_SIMILARITY;
+
+        AbstractStringMetric similarityMetric = new Levenshtein();
+        String queryWithAlphaOnly = query.getQuery().replaceAll("[^a-zA-Z]+"," ").toLowerCase();
+
+        for (Playlist p : playlists) {
+            float similarityVal = similarityMetric.getSimilarity(queryWithAlphaOnly, p.name.toLowerCase());
+
+            if (similarityVal > minimumSimilarityVal && similarityVal > mostSimilarVal) {
+                mostSimilarPlaylist = p;
+                mostSimilarVal = similarityVal;
+            }
+        }
+
+        if (mostSimilarPlaylist != null) {
+            return new QueryResults(mostSimilarPlaylist.spotifyId, mostSimilarPlaylist.spotifyUri,
+                    mostSimilarPlaylist.name, mostSimilarPlaylist.getImage(), QueryType.PLAYLIST);
+        } else {
+            return null;
+        }
+    }
+
+    private static QueryResults searchTrack(VoiceQuery query) throws JSONException {
         int retries = 0;
+        QueryResults results = null;
         boolean shouldRetry = true;
         while (shouldRetry && retries < Settings.SEARCH_TRACK_MAXIMUM_RETRIES) {
             try {
@@ -33,13 +90,6 @@ public class TrackHandler {
             } catch (IOException e) {
                 retries++;
             }
-        }
-
-        if (results != null) {
-            results.setVoiceQuery(query);
-            connection.requestConfirmation(results.toQueryResult(), context);
-        } else {
-            throw new NoTrackFoundException();
         }
         return results;
     }

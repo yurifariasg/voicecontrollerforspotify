@@ -34,6 +34,9 @@ public class GeneralUtils {
     }
 
     public static byte[] blurImage(byte[] img, Context context) {
+        if (img == null) {
+            return img;
+        }
         // Blur image
         Bitmap b = BitmapFactory.decodeByteArray(img, 0, img.length);
         if (b.getWidth() != 300 || b.getHeight() != 300) {

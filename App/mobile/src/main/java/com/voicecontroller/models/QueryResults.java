@@ -1,5 +1,8 @@
 package com.voicecontroller.models;
 
+import android.os.Bundle;
+import android.os.Parcelable;
+
 import com.voicecontroller.utils.SpotifyWebAPI;
 import org.json.JSONException;
 import java.io.IOException;
@@ -62,14 +65,63 @@ public class QueryResults {
         return tracks;
     }
 
-    public void fetchTracks(String userCountryCode) throws IOException, JSONException {
+    public void fetchTracks(Profile profile) throws IOException, JSONException {
         // If it is artists or playlist, fetch tracks.
         if (type.equals(QueryType.ARTIST)) {
-            tracks = SpotifyWebAPI.getTopTracksForArtist(id, userCountryCode);
+            tracks = SpotifyWebAPI.getTopTracksForArtist(id, profile.countryCode);
+        } else if (type.equals(QueryType.PLAYLIST)) {
+            tracks = SpotifyWebAPI.getPlaylistTracks(getId(), profile);
         }
     }
 
     public VoiceQueryResult toQueryResult() {
         return new VoiceQueryResult(id, name, subtitle, image);
+    }
+
+    public static QueryResults fromBundle(Bundle b) {
+        String id = b.getString("id");
+        String uri = b.getString("uri");
+        String name = b.getString("name");
+        String subtitle = b.getString("subtitle");
+        QueryType type = QueryType.valueOf(b.getString("type"));
+        byte[] image = b.getByteArray("image");
+        Parcelable[] parsedTracks = b.getParcelableArray("tracks");
+        Track[] tracks = null;
+        if (parsedTracks != null) {
+            tracks = new Track[parsedTracks.length];
+            for (int i = 0; i < tracks.length; i++) {
+                tracks[i] = Track.fromBundle((Bundle) parsedTracks[i]);
+            }
+        }
+        QueryResults results = new QueryResults(id, uri, name, subtitle, image, type, tracks);
+
+        Bundle queryBundle = b.getBundle("query");
+        if (queryBundle != null) {
+            results.setVoiceQuery(VoiceQuery.fromBundle(queryBundle));
+        }
+        return results;
+    }
+
+    public Bundle toBundle() {
+        Bundle b = new Bundle();
+        b.putString("id", id);
+        b.putString("uri", uri);
+        b.putString("name", name);
+        b.putString("subtitle", subtitle);
+        b.putByteArray("image", image);
+        b.putString("type", type.toString());
+        if (query != null) {
+            b.putBundle("query", query.toBundle());
+        }
+
+        if (tracks != null) {
+            Parcelable[] parsedTracks = new Parcelable[tracks.length];
+            for (int i = 0 ; i < tracks.length ; i++) {
+                parsedTracks[i] = tracks[i].toBundle();
+            }
+            b.putParcelableArray("tracks", parsedTracks);
+        }
+
+        return b;
     }
 }

@@ -11,6 +11,7 @@ import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
 import com.voicecontroller.callbacks.OnOAuthTokenRefreshed;
+import com.voicecontroller.models.Playlist;
 import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.QueryType;
 import com.voicecontroller.callbacks.OnProfileAcquired;
@@ -18,6 +19,7 @@ import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.Track;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
+import com.voicecontroller.settings.Settings;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,6 +35,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
 public class SpotifyWebAPI {
 
@@ -42,11 +45,14 @@ public class SpotifyWebAPI {
     private static final String BASE_URL = "https://api.spotify.com/v1/";
     private static final String ACCOUNTS_URL = "https://accounts.spotify.com/api/token";
     private static final String ARTISTS_BASE = "artists/";
+    private static final String USERS_BASE = "users/";
     private static final String TOP_TRACKS_ENDPOINT = "/top-tracks";
+    private static final String PLAYLISTS_ENDPOINT = "/playlists";
     private static final String SEARCH_API = "search";
     private static final String USER_PROFILE = "me";
     private static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MINIMUM_WIDTH = 200;
+    private static final int MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH = 3600; // 1hr
 
     public static void refreshOAuth(OAuthRecord record, final OnOAuthTokenRefreshed callback) {
         new AsyncTask<OAuthRecord, OAuthRecord, OAuthRecord>() {
@@ -77,14 +83,13 @@ public class SpotifyWebAPI {
                 }
 
                 Profile p = Select.from(Profile.class).where(Condition.prop("oauth").eq(params[0].getId())).first();
+                getAndSaveUserPlaylistAsync(p);
                 return p;
             }
 
             @Override
             protected void onPostExecute(Profile profile) {
-                if (profile != null) {
-                    callback.onProfileAcquired(profile);
-                }
+                callback.onProfileAcquired(profile);
             }
         }.execute(record);
     }
@@ -92,7 +97,7 @@ public class SpotifyWebAPI {
     public static void refreshOAuth(OAuthRecord record) {
         try {
             String authCode = "Basic " + ENCODED;
-            String encodedParams = "grant_type=refresh_token&refresh_token=" + URLEncoder.encode(record.refresh_token, "UTF-8");
+            String encodedParams = "grant_type=refresh_token&refresh_token=" + URLEncoder.encode(record.refresh_token, DEFAULT_ENCODING);
 
             // GET Access Code and Refresh Token
             String response = post(ACCOUNTS_URL, authCode, encodedParams);
@@ -113,7 +118,7 @@ public class SpotifyWebAPI {
     public static void callOAuthWindow(Activity activity) {
         // Initiate new OAuth Request...
         SpotifyAuthentication.openAuthWindow(CLIENT_ID, "code", REDIRECT_URI,
-                new String[]{"user-read-private", "streaming"}, null, activity);
+                Settings.SPOTIFY_USER_PERMISSIONS, null, activity);
 
     }
 
@@ -128,8 +133,8 @@ public class SpotifyWebAPI {
 
                     String authCode = "Basic " + ENCODED;
 
-                    String encodedParams = "grant_type=authorization_code&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, "UTF-8");
-                    encodedParams += "&code=" + URLEncoder.encode(code, "UTF-8");
+                    String encodedParams = "grant_type=authorization_code&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, DEFAULT_ENCODING);
+                    encodedParams += "&code=" + URLEncoder.encode(code, DEFAULT_ENCODING);
 
                     // GET Access Code and Refresh Token
                     String response = post(ACCOUNTS_URL, authCode, encodedParams);
@@ -143,6 +148,7 @@ public class SpotifyWebAPI {
                     record.expiration = System.currentTimeMillis()/1000 + expiresIn;
                     record.access_token = accessToken;
                     record.refresh_token = refresh_token;
+                    record.setPermissions(Settings.SPOTIFY_USER_PERMISSIONS);
                     record.save();
 
                 } catch (Exception e) {
@@ -167,7 +173,11 @@ public class SpotifyWebAPI {
 
             @Override
             protected Profile doInBackground(Void... params) {
-                return getUserProfile(oauth, false);
+                Profile p = getUserProfile(oauth, false);
+                if (p != null) {
+                    getAndSaveUserPlaylistAsync(p);
+                }
+                return p;
             }
 
             @Override
@@ -211,6 +221,7 @@ public class SpotifyWebAPI {
                         p = new Profile();
                     }
                     p.name = name;
+                    p.spotifyId = json.getString("id");
                     p.oauth = oauth;
                     p.product = product;
                     p.countryCode = countryCode;
@@ -230,7 +241,16 @@ public class SpotifyWebAPI {
     }
 
     public static QueryResults search(String query, QueryType type) throws JSONException, IOException {
+        Profile profile = null;
+        OAuthRecord oauth = OAuthService.getOAuthToken();
+        if (oauth != null) {
+            if (!oauth.isValid()) {
+                refreshOAuth(oauth);
+            }
+        }
+
         String url = BASE_URL + SEARCH_API + "?q=" + URLEncoder.encode(query, DEFAULT_ENCODING);
+
         switch (type) {
             case ARTIST:
                 url += "&type=artist";
@@ -243,7 +263,12 @@ public class SpotifyWebAPI {
                 break;
         }
 
-        String result = get(url, null);
+        String result;
+        if (oauth != null) {
+            result = get(url + "&market=from_token", oauth.access_token);
+        } else {
+            result = get(url, null);
+        }
         JSONObject json = new JSONObject(result);
 
         if (json.has("artists") && json.getJSONObject("artists").getJSONArray("items").length() > 0) {
@@ -258,7 +283,7 @@ public class SpotifyWebAPI {
 
             JSONObject trackJson = json.getJSONObject("tracks").getJSONArray("items").getJSONObject(0);
 
-            Track track = createTrackFromJSON(trackJson);
+            Track track = createTrackFromJSON(trackJson, null);
             Track[] tracks = new Track[] {track};
             return new QueryResults(track.getId(), track.getUri(), track.getName(), track.getArtist(), track.getImage(), QueryType.TRACK, tracks);
         } else {
@@ -266,23 +291,47 @@ public class SpotifyWebAPI {
         }
     }
 
-    private static Track createTrackFromJSON(JSONObject trackJson) throws JSONException {
-        String uri = trackJson.getString("uri");
-        String id = trackJson.getString("id");
-        String name = trackJson.getString("name");
-        JSONArray artists = trackJson.getJSONArray("artists");
-        String artist = "";
-        if (artists.length() > 0) {
-            artist = artists.getJSONObject(0).getString("name");
+    private static boolean isCountryInMarketsAvailable(String countryCode, JSONArray available_markets) throws JSONException {
+        for (int i = 0 ; i < available_markets.length() ; i++) {
+            if (available_markets.getString(i).equalsIgnoreCase(countryCode)) {
+                return true;
+            }
         }
+        return false;
+    }
 
-        byte[] img = null;
-        if (trackJson.has("album") && trackJson.getJSONObject("album").has("images")) {
-            JSONArray images = trackJson.getJSONObject("album").getJSONArray("images");
-            img = getImageFromArray(images);
+    private static Track createTrackFromJSON(JSONObject trackJson, String countryCodeToFilter) {
+        try {
+            if (countryCodeToFilter != null) {
+                // Check if we should parse this track in the first place...
+                JSONArray jsonArray = trackJson.getJSONArray("available_markets");
+                if (!isCountryInMarketsAvailable(countryCodeToFilter, jsonArray)) {
+                    return null;
+                }
+            }
+
+            String uri = trackJson.getString("uri");
+            String id = trackJson.getString("id");
+            String name = trackJson.getString("name");
+            JSONArray artists = trackJson.getJSONArray("artists");
+            String artist = "";
+            if (artists.length() > 0) {
+                artist = artists.getJSONObject(0).getString("name");
+            }
+
+            byte[] img = null;
+            if (trackJson.has("album") && trackJson.getJSONObject("album").has("images")) {
+                JSONArray images = trackJson.getJSONObject("album").getJSONArray("images");
+                img = getImageFromArray(images);
+            }
+
+            return new Track(id, name, artist, uri, img);
+        } catch (JSONException e) {
+            Log.e(Settings.APP_TAG, "Failed to parse track", e);
+            Crashlytics.setString("data", trackJson.toString());
+            Crashlytics.logException(e);
+            return null;
         }
-
-        return new Track(id, name, artist, uri, img);
     }
 
     public static Track[] getTopTracksForArtist(String artistId, String countryCode) throws IOException, JSONException {
@@ -296,7 +345,7 @@ public class SpotifyWebAPI {
             Track[] tracks = new Track[tracksJson.length()];
 
             for (int i = 0 ; i < tracksJson.length() ; i++) {
-                tracks[i] = createTrackFromJSON(tracksJson.getJSONObject(i));
+                tracks[i] = createTrackFromJSON(tracksJson.getJSONObject(i), null);
             }
 
             return tracks;
@@ -304,6 +353,138 @@ public class SpotifyWebAPI {
             Crashlytics.log("Could not request top tracks: " + response);
             return null;
         }
+    }
+
+    public static void getAndSaveUserPlaylistAsync(final Profile userProfile) {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+
+                try {
+                    int now = (int) (System.currentTimeMillis() / 1000);
+                    if (now - userProfile.lastPlaylistRefresh >= MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH) {
+                        Playlist[] playlists = getUserPlaylist(userProfile);
+                        userProfile.lastPlaylistRefresh = now;
+                        userProfile.save();
+                    }
+                } catch (Exception e) {
+                    Log.e(Settings.APP_TAG, "Exception", e);
+                    Crashlytics.logException(e);
+                }
+                return null;
+            }
+        }.execute();
+    }
+
+    public static Track[] getPlaylistTracks(String playlistId, Profile profile) throws IOException, JSONException {
+
+        String url = BASE_URL + USERS_BASE + profile.spotifyId + PLAYLISTS_ENDPOINT + "/" + playlistId + "/tracks";
+        String response = get(url, profile.oauth.access_token);
+        JSONObject jsonResponse = new JSONObject(response);
+        int total = jsonResponse.getInt("total");
+        int parsedTracks = 0;
+        ArrayList<Track> tracks = new ArrayList<>();
+
+        while (parsedTracks < total) {
+            if (jsonResponse.has("items") && total > 0) {
+                JSONArray items = jsonResponse.getJSONArray("items");
+                if (items.length() == 0) {
+                    break;
+                }
+
+                for (int i = 0 ; i < items.length() ; i++) {
+                    Track t = createTrackFromJSON(items.getJSONObject(i).getJSONObject("track"), profile.countryCode);
+                    if (t != null) {
+                        tracks.add(t);
+                    }
+                    parsedTracks++;
+                }
+            } else if (!jsonResponse.has("items")) {
+                break;
+            }
+
+            if (parsedTracks < total) {
+                url = BASE_URL + USERS_BASE + profile.spotifyId + PLAYLISTS_ENDPOINT + "/" + playlistId + "/tracks?offset=" + parsedTracks;
+                response = get(url, profile.oauth.access_token);
+                jsonResponse = new JSONObject(response);
+            }
+
+        }
+        Track[] trackArray = new Track[tracks.size()];
+        tracks.toArray(trackArray);
+        return trackArray;
+    }
+
+    public static Playlist[] getUserPlaylist(Profile userProfile) throws IOException, JSONException {
+        OAuthRecord record = userProfile.oauth;
+        String userId = userProfile.spotifyId;
+
+        String url = BASE_URL + USERS_BASE + userId + PLAYLISTS_ENDPOINT + "?limit=50";
+        String response = get(url, record.access_token);
+        JSONObject jsonResponse = new JSONObject(response);
+
+        int total = jsonResponse.getInt("total");
+        int playlistsParsed = 0;
+        Playlist[] playlists = new Playlist[total];
+
+        while (playlistsParsed < total) {
+
+            if (jsonResponse.has("items") && total > 0) {
+                JSONArray items = jsonResponse.getJSONArray("items");
+                if (items.length() == 0) {
+                    break;
+                }
+
+                for (int i = 0 ; i < items.length() ; i++) {
+                    Playlist p = parsePlaylist(items.getJSONObject(i), userProfile);
+                    playlists[playlistsParsed++] = p;
+                }
+            } else if (!jsonResponse.has("items")) {
+                break;
+            }
+
+            if (playlistsParsed < total) {
+                url = BASE_URL + USERS_BASE + userId + PLAYLISTS_ENDPOINT + "?offset=" + playlistsParsed + "&limit=50";
+                response = get(url, record.access_token);
+                jsonResponse = new JSONObject(response);
+            }
+        }
+        return playlists;
+    }
+
+    private static Playlist parsePlaylist(JSONObject json, Profile userProfile) throws JSONException {
+
+        String name = json.getString("name");
+        String spotifyId = json.getString("id");
+        String spotifyUri = json.getString("uri");
+
+        int tracksCount = 0;
+        if (json.has("tracks")) {
+            tracksCount = json.getJSONObject("tracks").getInt("total");
+        }
+
+
+        JSONArray imagesArray = json.getJSONArray("images");
+        byte[] img = null;
+        if (imagesArray.length() > 0) {
+            img = downloadImage(imagesArray.getJSONObject(0).getString("url"));
+        }
+
+        Playlist playlist = Select.from(Playlist.class).where(Condition.prop("SPOTIFY_ID").eq(spotifyId)).first();
+        if (playlist == null) {
+            playlist = new Playlist();
+        }
+
+        playlist.profile = userProfile;
+        playlist.name = name;
+        playlist.spotifyId = spotifyId;
+        playlist.spotifyUri = spotifyUri;
+        playlist.tracksCount = tracksCount;
+        playlist.setImage(img);
+
+        playlist.save();
+
+        return playlist;
     }
 
     private static byte[] getImageFromArray(JSONArray images) throws JSONException {
@@ -409,7 +590,5 @@ public class SpotifyWebAPI {
 
         conn.disconnect();
         return sb.toString();
-
     }
-
 }

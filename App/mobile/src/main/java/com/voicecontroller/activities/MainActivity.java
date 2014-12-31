@@ -62,7 +62,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 protected Void doInBackground(Void... params) {
                     try {
                         QueryResults results = SpotifyWebAPI.search("rise against", QueryType.DEFAULT);
-                        results.fetchTracks("US");
+//                        results.fetchTracks("US");
                         Intent intent = new Intent(me, NativePlayer.class);
                         intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
 
@@ -109,18 +109,21 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     @Override
     public void onProfileAcquired(Profile profile) {
-        if (profile.product == null || !profile.product.equalsIgnoreCase("premium")) {
-            Toast.makeText(this, getString(R.string.not_premium_account), Toast.LENGTH_LONG).show();
-            OAuthRecord.deleteAll(OAuthRecord.class);
-            LoginFragment fragment = LoginFragment.newInstance();
-            switchTo(fragment);
-        } else {
-            Log.i(Settings.APP_TAG, profile.oauth.access_token);
-            ProfileFragment fragment = ProfileFragment.newInstance(profile);
-            switchTo(fragment);
-            if (profile.getId() == null) {
-                profile.save();
+        if (profile != null) {
+            if (profile.product == null || !profile.product.equalsIgnoreCase("premium")) {
+                Toast.makeText(this, getString(R.string.not_premium_account), Toast.LENGTH_LONG).show();
+                OAuthRecord.deleteAll(OAuthRecord.class);
+                LoginFragment fragment = LoginFragment.newInstance();
+                switchTo(fragment);
+            } else {
+                ProfileFragment fragment = ProfileFragment.newInstance(profile);
+                switchTo(fragment);
+                if (profile.getId() == null) {
+                    profile.save();
+                }
             }
+        } else {
+            logOut();
         }
     }
 
@@ -128,15 +131,19 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public void onClick(View v) {
 
         if (v.getId() == R.id.logoutBt) {
-            Profile.deleteAll(Profile.class);
-            OAuthRecord.deleteAll(OAuthRecord.class);
-
-            LoginFragment fragment = LoginFragment.newInstance();
-            switchTo(fragment);
+            logOut();
         } else if (v.getId() == R.id.signInBt) {
             SpotifyWebAPI.callOAuthWindow(this);
         }
 
+    }
+
+    private void logOut() {
+        Profile.deleteAll(Profile.class);
+        OAuthRecord.deleteAll(OAuthRecord.class);
+
+        LoginFragment fragment = LoginFragment.newInstance();
+        switchTo(fragment);
     }
 
     @Override

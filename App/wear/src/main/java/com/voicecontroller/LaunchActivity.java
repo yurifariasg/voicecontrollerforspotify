@@ -17,7 +17,7 @@ public class LaunchActivity extends Activity implements MessageCallback {
 
     private static final long MINIMUM_QUERY_TIME_IN_MS = 3000;
     private static final int SPEECH_REQUEST_CODE = 0;
-    private static final boolean SHOULD_FAKE_QUERY = true;
+    private static final boolean SHOULD_FAKE_QUERY = false;
 
     private String query;
 
@@ -45,34 +45,38 @@ public class LaunchActivity extends Activity implements MessageCallback {
     protected void onStart() {
         super.onStart();
         query = getIntent().getStringExtra(SearchManager.QUERY);
-        handleQuery(query);
+        handleQuery(query, true);
     }
 
-    private void handleQuery(String query) {
+    private void handleQuery(String query, boolean cameFromSystemVoiceAction) {
         if (query != null && !query.isEmpty()) {
-            if (query.startsWith("play")) {
-                query = query.substring(4).trim(); // Ignore play
-            }
-
-            if (queryTv != null) {
-                queryTv.setText(query);
+            if (cameFromSystemVoiceAction && query.toLowerCase().equals("music")) {
+                displaySpeechRecognizer();
             } else {
-                final String queryText = query;
-                final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
-                stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
-                    @Override
-                    public void onLayoutInflated(WatchViewStub stub) {
-                        queryTv = (TextView) stub.findViewById(R.id.queryNameTv);
-                        queryTv.setText(queryText);
-                    }
-                });
+                if (query.startsWith("play ")) {
+                    query = query.substring(5).trim(); // Ignore play
+                }
+
+                if (queryTv != null) {
+                    queryTv.setText(query);
+                } else {
+                    final String queryText = query;
+                    final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
+                    stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+                        @Override
+                        public void onLayoutInflated(WatchViewStub stub) {
+                            queryTv = (TextView) stub.findViewById(R.id.queryNameTv);
+                            queryTv.setText(queryText);
+                        }
+                    });
+                }
+
+                startTimestamp = System.currentTimeMillis();
+
+                MobileConnection.getInstance().sendQuery(query, this);
             }
-
-            startTimestamp = System.currentTimeMillis();
-
-            MobileConnection.getInstance().sendQuery(query, this);
         } else if (SHOULD_FAKE_QUERY) {
-            handleQuery("Anavae World in a Bottle next");
+            handleQuery("Anavae World in a Bottle next", false);
         } else {
             displaySpeechRecognizer();
         }
@@ -96,7 +100,7 @@ public class LaunchActivity extends Activity implements MessageCallback {
             List<String> results = data.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS);
             String spokenText = results.get(0);
-            handleQuery(spokenText);
+            handleQuery(spokenText, false);
         }
         super.onActivityResult(requestCode, resultCode, data);
     }

@@ -1,6 +1,8 @@
 package com.voicecontroller.models;
 
 
+import android.os.Bundle;
+
 import com.voicecontroller.utils.GeneralUtils;
 
 import java.util.HashMap;
@@ -33,6 +35,24 @@ public class VoiceQuery {
 
     public VoiceQuery(String rawQuery) {
         parseRawQuery(rawQuery);
+    }
+
+    private VoiceQuery() {}
+
+    public static VoiceQuery fromBundle(Bundle b) {
+        VoiceQuery query = new VoiceQuery();
+        query.enqueue = b.getBoolean("enqueue");
+        query.query = b.getString("query");
+        query.type = QueryType.valueOf(b.getString("type"));
+        return query;
+    }
+
+    public Bundle toBundle() {
+        Bundle b = new Bundle();
+        b.putString("query", query);
+        b.putString("type", type.toString());
+        b.putBoolean("enqueue", enqueue);
+        return b;
     }
 
     public String getQuery() {
