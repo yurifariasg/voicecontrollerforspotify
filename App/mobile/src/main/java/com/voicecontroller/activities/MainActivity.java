@@ -115,6 +115,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             LoginFragment fragment = LoginFragment.newInstance();
             switchTo(fragment);
         } else {
+            Log.i(Settings.APP_TAG, profile.oauth.access_token);
             ProfileFragment fragment = ProfileFragment.newInstance(profile);
             switchTo(fragment);
             if (profile.getId() == null) {

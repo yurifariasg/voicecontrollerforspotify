@@ -44,7 +44,7 @@
 
         <meta-data android:name="DATABASE" android:value="voicecontroller.db" />
         <meta-data android:name="VERSION" android:value="2" />
-        <meta-data android:name="QUERY_LOG" android:value="false" />
+        <meta-data android:name="QUERY_LOG" android:value="true" />
         <meta-data android:name="DOMAIN_PACKAGE_NAME" android:value="com.voicecontroller" />
 
         <meta-data android:name="com.crashlytics.ApiKey" android:value="c62a91ed19b2a53cd5f68ba6b3da2683d0aee470"/>
