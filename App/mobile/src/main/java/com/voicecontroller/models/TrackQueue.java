@@ -3,6 +3,7 @@ package com.voicecontroller.models;
 import android.support.annotation.NonNull;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -17,6 +18,15 @@ public class TrackQueue implements Queue<Track> {
     public TrackQueue() {
         mainQueue = new LinkedList<>();
         previousStack = new Stack<>();
+    }
+
+    public void refill() {
+        mainQueue.addAll(previousStack);
+        previousStack.clear();
+    }
+
+    public void shuffle() {
+        Collections.shuffle(mainQueue);
     }
 
     @Override
@@ -38,7 +48,7 @@ public class TrackQueue implements Queue<Track> {
 
     @Override
     public Track remove() {
-        previousStack.add(mainQueue.remove());
+        previousStack.push(mainQueue.remove());
         return previousStack.peek();
     }
 
@@ -46,7 +56,7 @@ public class TrackQueue implements Queue<Track> {
     public Track poll() {
         Track removedTrack = mainQueue.poll();
         if (removedTrack != null) {
-            previousStack.add(removedTrack);
+            previousStack.push(removedTrack);
         }
         return removedTrack;
     }

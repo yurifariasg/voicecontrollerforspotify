@@ -56,6 +56,13 @@ public class WearableConnection implements GoogleApiClient.ConnectionCallbacks,
         flushMessages();
     }
 
+    public void sendNoResults() {
+        WearableMessage message = new WearableMessage();
+        message.path = "no_results";
+        messages.add(message);
+        flushMessages();
+    }
+
     public void flushMessages() {
         if (mNode != null && mGoogleApiClient!=null && mGoogleApiClient.isConnected()) {
             while (!messages.isEmpty()) {

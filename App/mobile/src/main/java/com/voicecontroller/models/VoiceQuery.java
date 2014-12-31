@@ -2,7 +2,9 @@ package com.voicecontroller.models;
 
 
 import android.os.Bundle;
+import android.util.Log;
 
+import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.GeneralUtils;
 
 import java.util.HashMap;
@@ -17,21 +19,28 @@ public class VoiceQuery {
     public static final String ARTIST_KEYWORD_KEY = "artist";
     public static final String PLAYLIST_KEYWORD_KEY = "playlist";
     public static final String TRACK_KEYWORD_KEY = "track";
+    public static final String REPEAT_KEYWORD_KEY = "repeat";
+    public static final String SHUFFLE_KEYWORD_KEY = "shuffle";
 
     public static final HashMap<String, String[]> KEYWORDS;
     static {
         KEYWORDS = new HashMap<>();
 
         /* These should be updated depending on language */
+        /* Always remember to put composed-phrases before */
         KEYWORDS.put(ENQUEUE_KEYWORD_KEY, toArray("next"));
         KEYWORDS.put(ARTIST_KEYWORD_KEY, toArray("artist"));
         KEYWORDS.put(PLAYLIST_KEYWORD_KEY, toArray("playlist"));
         KEYWORDS.put(TRACK_KEYWORD_KEY, toArray("song", "track"));
+        KEYWORDS.put(REPEAT_KEYWORD_KEY, toArray("on repeat", "repeated", "repeat"));
+        KEYWORDS.put(SHUFFLE_KEYWORD_KEY, toArray("on shuffle", "shuffled", "shuffle"));
     }
 
     private String query = null;
     private QueryType type = QueryType.DEFAULT;
     private boolean enqueue = false;
+    private boolean shuffle = false;
+    private boolean repeat = false;
 
     public VoiceQuery(String rawQuery) {
         parseRawQuery(rawQuery);
@@ -43,6 +52,8 @@ public class VoiceQuery {
         VoiceQuery query = new VoiceQuery();
         query.enqueue = b.getBoolean("enqueue");
         query.query = b.getString("query");
+        query.shuffle = b.getBoolean("shuffle");
+        query.repeat = b.getBoolean("repeat");
         query.type = QueryType.valueOf(b.getString("type"));
         return query;
     }
@@ -52,6 +63,8 @@ public class VoiceQuery {
         b.putString("query", query);
         b.putString("type", type.toString());
         b.putBoolean("enqueue", enqueue);
+        b.putBoolean("repeat", repeat);
+        b.putBoolean("shuffle", shuffle);
         return b;
     }
 
@@ -66,6 +79,10 @@ public class VoiceQuery {
     public boolean shouldEnqueue() {
         return enqueue;
     }
+
+    public boolean shouldRepeat() { return repeat; }
+
+    public boolean shouldShuffle() { return shuffle; }
 
     private void parseRawQuery(String rawQuery) {
         this.query = rawQuery.toLowerCase().trim();
@@ -116,6 +133,12 @@ public class VoiceQuery {
                 break;
             case PLAYLIST_KEYWORD_KEY:
                 updateType(QueryType.PLAYLIST);
+                break;
+            case REPEAT_KEYWORD_KEY:
+                repeat = true;
+                break;
+            case SHUFFLE_KEYWORD_KEY:
+                shuffle = true;
                 break;
             default:
                 break;

@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.net.Uri;
 import com.orm.query.Condition;
 import com.orm.query.Select;
-import com.voicecontroller.exceptions.NoTrackFoundException;
 import com.voicecontroller.models.Playlist;
 import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
@@ -28,7 +27,7 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.Levenshtein;
 
 public class TrackHandler {
 
-    public static QueryResults lookForTrack(VoiceQuery query, WearableConnection connection, Context context) throws NoTrackFoundException, JSONException, UnsupportedEncodingException {
+    public static QueryResults lookForTrack(VoiceQuery query, WearableConnection connection, Context context) throws JSONException, UnsupportedEncodingException {
 
         QueryResults results = null;
         if (query.getType().equals(QueryType.PLAYLIST)) {
@@ -41,7 +40,7 @@ public class TrackHandler {
             results.setVoiceQuery(query);
             connection.requestConfirmation(results.toQueryResult(), context);
         } else {
-            throw new NoTrackFoundException();
+            connection.sendNoResults();
         }
         return results;
     }

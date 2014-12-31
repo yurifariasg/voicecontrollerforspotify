@@ -8,14 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.service.notification.NotificationListenerService;
-import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.media.MediaMetadataCompat;
@@ -26,9 +20,6 @@ import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
 import com.crashlytics.android.Crashlytics;
-import com.google.android.gms.internal.le;
-import com.orm.query.Condition;
-import com.orm.query.Select;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.playback.Config;
 import com.spotify.sdk.android.playback.ConnectionStateCallback;
@@ -52,16 +43,13 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 
 public class NativePlayer extends Service implements PlayerNotificationCallback,
         ConnectionStateCallback, Player.InitializationObserver, OnOAuthTokenRefreshed {
 
-    public static final int NOTIFICATION_ID = 1;
-    public static final int ERROR_NOTIFICATION_ID = 2;
     public static final int PLAY = 1;
     public static final int PAUSE = 2;
     public static final int NEXT = 3;
@@ -79,6 +67,8 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     private MediaSessionCompat mySession;
 
     private Notification ongoingNotification;
+    private boolean isInRepeatMode = false;
+    private boolean isInShuffleMode = false;
 
     public NativePlayer() {
         tracks = new TrackQueue();
@@ -208,6 +198,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                     .setContentText(tracks.peek().getArtist())
                     .setLargeIcon(artwork)
                     .setDeleteIntent(getIntentFor(CLOSE));
+            builder.setVisibility(Notification.VISIBILITY_PUBLIC);
 
             builder.setContentIntent(getIntentFor(MAIN));
 
@@ -232,12 +223,12 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             builder.setContentTitle(tracks.peek().getName())
                     .setContentText(tracks.peek().getArtist())
                     .setLargeIcon(artwork)
-                    .setDeleteIntent(getIntentFor(CLOSE));;
+                    .setDeleteIntent(getIntentFor(CLOSE));
 
             builder.setContentIntent(getIntentFor(MAIN));
             notification = builder.build();
+            notification.visibility = Notification.VISIBILITY_PUBLIC;
             notification.bigContentView = new RemoteViews(getPackageName(), R.layout.notification_layout);
-
         }
 
         if (notification != null) {
@@ -269,10 +260,10 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
         ongoingNotification = notification;
         if (state != PlaybackStateCompat.STATE_PAUSED) {
-            startForeground(NOTIFICATION_ID, ongoingNotification);
+            startForeground(Settings.NOTIFICATION_ID, ongoingNotification);
         } else {
             NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-            notificationManager.notify(NOTIFICATION_ID, ongoingNotification);
+            notificationManager.notify(Settings.NOTIFICATION_ID, ongoingNotification);
         }
     }
 
@@ -347,6 +338,15 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         results.fetchTracks(profile);
 
         boolean shouldEnqueue = results.getQuery().shouldEnqueue();
+        boolean shouldRepeat = results.getQuery().shouldRepeat();
+        boolean shouldShuffle = results.getQuery().shouldShuffle();
+
+        isInRepeatMode = shouldRepeat;
+        isInShuffleMode = shouldShuffle;
+
+        if (shouldShuffle) {
+            Collections.shuffle(Arrays.asList(tracks));
+        }
 
         if (!shouldEnqueue) {
             tracks.clear();
@@ -394,7 +394,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                 NotificationManagerCompat.from(this);
 
         // Build the notification and issues it with notification manager.
-        notificationManager.notify(ERROR_NOTIFICATION_ID, notificationBuilder.build());
+        notificationManager.notify(Settings.ERROR_NOTIFICATION_ID, notificationBuilder.build());
     }
 
     private void initializePlayerWithToken(OAuthRecord record) {
@@ -419,7 +419,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     }
 
     public void next() {
-        if (tracks.size() <= 1) {
+        if (tracks.size() <= 1 && !isInRepeatMode) {
             pause();
         } else {
             playNext();
@@ -477,8 +477,17 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public void playNext() {
         if (!tracks.isEmpty()) {
             if (tracks.size() == 1) {
-                pause();
-                stopNotification(false);
+                if (isInRepeatMode) {
+                    tracks.poll();
+                    tracks.refill();
+                    if (isInShuffleMode) {
+                        tracks.shuffle();
+                    }
+                    play();
+                } else {
+                    pause();
+                    stopNotification(false);
+                }
             } else {
                 tracks.remove();
                 play();

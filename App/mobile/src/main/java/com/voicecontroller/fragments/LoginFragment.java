@@ -15,6 +15,8 @@ public class LoginFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 
     private View.OnClickListener mListener;
+    private View mainView;
+    private boolean shouldShowLoading;
 
     /**
      * Use this factory method to create a new instance of
@@ -35,9 +37,17 @@ public class LoginFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_login, container, false);
-        v.findViewById(R.id.signInBt).setOnClickListener(mListener);
-        return v;
+
+        mainView = inflater.inflate(R.layout.fragment_login, container, false);
+        mainView.findViewById(R.id.signInBt).setOnClickListener(mListener);
+
+        if (shouldShowLoading) {
+            showLoading();
+        } else {
+            showButton();
+        }
+
+        return mainView;
     }
 
     @Override
@@ -49,6 +59,22 @@ public class LoginFragment extends Fragment {
             throw new ClassCastException(activity.toString()
                     + " must implement OnFragmentInteractionListener");
         }
+    }
+
+    public void showLoading() {
+        if (mainView != null) {
+            mainView.findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+            mainView.findViewById(R.id.signInBt).setVisibility(View.GONE);
+        }
+        shouldShowLoading = true;
+    }
+
+    public void showButton() {
+        if (mainView != null) {
+            mainView.findViewById(R.id.progressBar).setVisibility(View.GONE);
+            mainView.findViewById(R.id.signInBt).setVisibility(View.VISIBLE);
+        }
+        shouldShowLoading = false;
     }
 
     @Override

@@ -17,7 +17,7 @@ public class GeneralUtils {
 
     public static String startWithAny(String name, String[] prefixes) {
         for (String prefix : prefixes) {
-            if (name.startsWith(prefix)) {
+            if (name.startsWith(prefix + " ")) {
                 return prefix;
             }
         }
@@ -26,7 +26,7 @@ public class GeneralUtils {
 
     public static String endWithAny(String name, String[] suffixes) {
         for (String suffix : suffixes) {
-            if (name.endsWith(suffix)) {
+            if (name.endsWith(" " + suffix)) {
                 return suffix;
             }
         }

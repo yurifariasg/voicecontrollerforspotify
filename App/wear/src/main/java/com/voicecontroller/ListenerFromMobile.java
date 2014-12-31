@@ -34,6 +34,10 @@ public class ListenerFromMobile extends WearableListenerService {
                 i.putExtra("trackUri", data.getString("id"));
                 i.putExtra("confirmation_time", data.getInt("confirmation_time"));
                 startActivity(i);
+            } else if (path.equalsIgnoreCase("no_results")) {
+                Intent i = new Intent(this, NoResultsActivity.class);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
             }
         } catch (Exception e) {
             Log.e("ListenerFromMobile", "Error: " + e.getLocalizedMessage());

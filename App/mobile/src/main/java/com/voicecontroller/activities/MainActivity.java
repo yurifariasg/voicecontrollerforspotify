@@ -112,7 +112,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         if (profile != null) {
             if (profile.product == null || !profile.product.equalsIgnoreCase("premium")) {
                 Toast.makeText(this, getString(R.string.not_premium_account), Toast.LENGTH_LONG).show();
-                OAuthRecord.deleteAll(OAuthRecord.class);
+                OAuthService.clean();
                 LoginFragment fragment = LoginFragment.newInstance();
                 switchTo(fragment);
             } else {
@@ -133,14 +133,16 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         if (v.getId() == R.id.logoutBt) {
             logOut();
         } else if (v.getId() == R.id.signInBt) {
+            if (mFragment instanceof LoginFragment) {
+                ((LoginFragment)mFragment).showLoading();
+            }
             SpotifyWebAPI.callOAuthWindow(this);
         }
 
     }
 
     private void logOut() {
-        Profile.deleteAll(Profile.class);
-        OAuthRecord.deleteAll(OAuthRecord.class);
+        OAuthService.clean();
 
         LoginFragment fragment = LoginFragment.newInstance();
         switchTo(fragment);
@@ -221,6 +223,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             invalidateOptionsMenu();
             ft.replace(fl.getId(), fragment).commitAllowingStateLoss();
             mFragment = fragment;
+
+            if (mFragment instanceof LoginFragment) {
+                ((LoginFragment)mFragment).showButton();
+            }
         }
     }
 }

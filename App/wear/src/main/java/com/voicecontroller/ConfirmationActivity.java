@@ -14,11 +14,14 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.Random;
+
 
 public class ConfirmationActivity extends Activity
         implements DelayedConfirmationView.DelayedConfirmationListener, MessageCallback {
 
     private static final int CONFIRMATION_ACTIVITY_CODE = 5;
+    private static final int[] DEFAULT_BACKGROUNDS = new int[] {R.drawable.disco, R.drawable.guitar, R.drawable.lights, R.drawable.dj};
 
     private DelayedConfirmationView mDelayedView;
 
@@ -46,6 +49,10 @@ public class ConfirmationActivity extends Activity
 
         if (imgBytes != null && imgBytes.length > 0) {
             image = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+        } else {
+            Random r = new Random();
+            int randomIndex = r.nextInt(DEFAULT_BACKGROUNDS.length);
+            image = BitmapFactory.decodeResource(getResources(), DEFAULT_BACKGROUNDS[randomIndex]);
         }
 
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);

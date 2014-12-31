@@ -128,31 +128,44 @@ public class SpotifyWebAPI {
             @Override
             protected OAuthRecord doInBackground(Uri... params) {
                 OAuthRecord record = null;
+                String encodedParams = null;
+                String code = null;
+                String response = null;
                 try {
-                    String code = params[0].getQueryParameter("code");
+                    code = params[0].getQueryParameter("code");
+                    if (code != null) {
+                        String authCode = "Basic " + ENCODED;
 
-                    String authCode = "Basic " + ENCODED;
+                        encodedParams = "grant_type=authorization_code&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, DEFAULT_ENCODING);
+                        encodedParams += "&code=" + URLEncoder.encode(code, DEFAULT_ENCODING);
 
-                    String encodedParams = "grant_type=authorization_code&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, DEFAULT_ENCODING);
-                    encodedParams += "&code=" + URLEncoder.encode(code, DEFAULT_ENCODING);
+                        // GET Access Code and Refresh Token
+                        response = post(ACCOUNTS_URL, authCode, encodedParams);
 
-                    // GET Access Code and Refresh Token
-                    String response = post(ACCOUNTS_URL, authCode, encodedParams);
+                        JSONObject json = new JSONObject(response);
+                        String accessToken = json.getString("access_token");
+                        String refresh_token = json.getString("refresh_token");
+                        int expiresIn = json.getInt("expires_in");
 
-                    JSONObject json = new JSONObject(response);
-                    String accessToken = json.getString("access_token");
-                    String refresh_token = json.getString("refresh_token");
-                    int expiresIn = json.getInt("expires_in");
-
-                    record = new OAuthRecord();
-                    record.expiration = System.currentTimeMillis()/1000 + expiresIn;
-                    record.access_token = accessToken;
-                    record.refresh_token = refresh_token;
-                    record.setPermissions(Settings.SPOTIFY_USER_PERMISSIONS);
-                    record.save();
+                        record = new OAuthRecord();
+                        record.expiration = System.currentTimeMillis() / 1000 + expiresIn;
+                        record.access_token = accessToken;
+                        record.refresh_token = refresh_token;
+                        record.setPermissions(Settings.SPOTIFY_USER_PERMISSIONS);
+                        record.save();
+                    }
 
                 } catch (Exception e) {
                     Log.w("SpotifyWebAPI", "Failed to get access and refresh tokens", e);
+                    if (encodedParams != null) {
+                        Crashlytics.setString("encodedParams", encodedParams);
+                    }
+                    if (code != null) {
+                        Crashlytics.setString("code", code);
+                    }
+                    if (response != null) {
+                        Crashlytics.setString("response", response);
+                    }
                     Crashlytics.logException(e);
                 }
 

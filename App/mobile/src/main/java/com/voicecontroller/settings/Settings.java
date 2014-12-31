@@ -25,6 +25,8 @@ public class Settings {
     // These are real constants
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
+    public static final int NOTIFICATION_ID = 1;
+    public static final int ERROR_NOTIFICATION_ID = 2;
     public static float MINIMUM_PLAYLIST_NAME_SIMILARITY = 0.7f; // 70%
     public static boolean ENABLE_CRASHLYTICS = true && !BuildConfig.DEBUG;
     public static boolean MOCK_WATCH_REQUEST = false && BuildConfig.DEBUG;

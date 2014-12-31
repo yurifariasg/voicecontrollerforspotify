@@ -5,10 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
-import android.os.Parcelable;
 import android.os.PowerManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
@@ -16,17 +13,10 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.voicecontroller.BuildConfig;
-import com.voicecontroller.R;
-import com.voicecontroller.exceptions.NoTrackFoundException;
-import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
-import com.voicecontroller.models.Track;
 import com.voicecontroller.models.VoiceQuery;
-import com.voicecontroller.oauth.OAuthRecord;
-import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.nativeplayer.NativePlayer;
-import com.voicecontroller.utils.SpotifyWebAPI;
 
 import org.json.JSONException;
 
@@ -88,31 +78,11 @@ public class ListenerFromWear extends WearableListenerService {
         }
     }
 
-    private void showTrackNotFoundNotification() {
-        int notificationId = 1001;
-        // Build intent for notification content
-        NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(getApplicationContext())
-                        .setSmallIcon(R.drawable.ic_stat_music)
-                        .setContentTitle(getString(R.string.track_not_found_title))
-                        .setContentText(getString(R.string.track_not_found_desc));
-        notificationBuilder.extend(new NotificationCompat.WearableExtender().setHintHideIcon(true));
-        notificationBuilder.setPriority(NotificationCompat.PRIORITY_MAX);
-
-        // Get an instance of the NotificationManager service
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-        // Build the notification and issues it with notification manager.
-        notificationManager.notify(notificationId, notificationBuilder.build());
-    }
-
     private void onQueryReceived(String query, WearableConnection connection) throws JSONException, UnsupportedEncodingException {
-        try {
-            VoiceQuery voiceQuery = new VoiceQuery(query);
-            QueryResults results = TrackHandler.lookForTrack(voiceQuery, connection, this);
+        VoiceQuery voiceQuery = new VoiceQuery(query);
+        QueryResults results = TrackHandler.lookForTrack(voiceQuery, connection, this);
+        if (results != null) {
             queryResults.put(results.getId(), results);
-        } catch (NoTrackFoundException e) {
-            showTrackNotFoundNotification();
         }
     }
 
