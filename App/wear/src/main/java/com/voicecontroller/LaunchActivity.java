@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.wearable.view.WatchViewStub;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ public class LaunchActivity extends Activity implements MessageCallback {
     private long startTimestamp;
     private Handler queryFinishHandler;
 
+    private View mainLayout;
     private TextView queryTv;
 
     @Override
@@ -37,6 +39,7 @@ public class LaunchActivity extends Activity implements MessageCallback {
             @Override
             public void onLayoutInflated(WatchViewStub stub) {
                 queryTv = (TextView) stub.findViewById(R.id.queryNameTv);
+                mainLayout = stub.findViewById(R.id.mainLayout);
             }
         });
     }
@@ -57,8 +60,9 @@ public class LaunchActivity extends Activity implements MessageCallback {
                     query = query.substring(5).trim(); // Ignore play
                 }
 
-                if (queryTv != null) {
+                if (queryTv != null && mainLayout != null) {
                     queryTv.setText(query);
+                    mainLayout.setVisibility(View.VISIBLE);
                 } else {
                     final String queryText = query;
                     final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
@@ -66,6 +70,8 @@ public class LaunchActivity extends Activity implements MessageCallback {
                         @Override
                         public void onLayoutInflated(WatchViewStub stub) {
                             queryTv = (TextView) stub.findViewById(R.id.queryNameTv);
+                            mainLayout = stub.findViewById(R.id.mainLayout);
+                            mainLayout.setVisibility(View.VISIBLE);
                             queryTv.setText(queryText);
                         }
                     });
@@ -101,6 +107,8 @@ public class LaunchActivity extends Activity implements MessageCallback {
                     RecognizerIntent.EXTRA_RESULTS);
             String spokenText = results.get(0);
             handleQuery(spokenText, false);
+        } else if (requestCode == SPEECH_REQUEST_CODE) {
+            finish();
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
