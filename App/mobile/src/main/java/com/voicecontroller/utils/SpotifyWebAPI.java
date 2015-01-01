@@ -36,6 +36,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 
 public class SpotifyWebAPI {
 
@@ -52,7 +53,6 @@ public class SpotifyWebAPI {
     private static final String USER_PROFILE = "me";
     private static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MINIMUM_WIDTH = 200;
-    private static final int MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH = 3600; // 1hr
 
     public static void refreshOAuth(OAuthRecord record, final OnOAuthTokenRefreshed callback) {
         new AsyncTask<OAuthRecord, OAuthRecord, OAuthRecord>() {
@@ -298,7 +298,7 @@ public class SpotifyWebAPI {
 
             Track track = createTrackFromJSON(trackJson, null);
             Track[] tracks = new Track[] {track};
-            return new QueryResults(track.getId(), track.getUri(), track.getName(), track.getArtist(), track.getImage(), QueryType.TRACK, tracks);
+            return new QueryResults(track.getSpotifyId(), track.getUri(), track.getName(), track.getArtist(), track.getImage(), QueryType.TRACK, tracks);
         } else {
             return null;
         }
@@ -375,7 +375,7 @@ public class SpotifyWebAPI {
 
                 try {
                     int now = (int) (System.currentTimeMillis() / 1000);
-                    if (now - userProfile.lastPlaylistRefresh >= MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH) {
+                    if (now - userProfile.lastPlaylistRefresh >= Settings.MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH) {
                         Playlist[] playlists = getUserPlaylist(userProfile);
                         userProfile.lastPlaylistRefresh = now;
                         userProfile.save();
@@ -390,6 +390,17 @@ public class SpotifyWebAPI {
     }
 
     public static Track[] getPlaylistTracks(String playlistId, Profile profile) throws IOException, JSONException {
+
+        Playlist playlist = Select.from(Playlist.class).where(Condition.prop("SPOTIFY_ID").eq(playlistId)).first();
+        int now = (int) (System.currentTimeMillis() / 1000);
+        if (playlist != null && now - playlist.lastPlaylistFetch <= Settings.MINIMUM_TIME_BETWEEN_PLAYLIST_TRACKS_REFRESH) {
+            // If it is cached and valid get from db.
+            List<Track> tracks = Select.from(Track.class).where(Condition.prop("PLAYLIST").eq(playlist.getId())).list();
+            Track[] tracksArray = new Track[tracks.size()];
+            return tracks.toArray(tracksArray);
+        } else if (playlist != null) {
+            Track.deleteAll(Track.class, "playlist = ?", String.valueOf(playlist.getId()));
+        }
 
         String url = BASE_URL + USERS_BASE + profile.spotifyId + PLAYLISTS_ENDPOINT + "/" + playlistId + "/tracks";
         String response = get(url, profile.oauth.access_token);
@@ -421,8 +432,16 @@ public class SpotifyWebAPI {
                 response = get(url, profile.oauth.access_token);
                 jsonResponse = new JSONObject(response);
             }
-
         }
+        if (playlist != null) {
+            for (Track t : tracks) {
+                t.playlist = playlist;
+                t.save();
+            }
+            playlist.lastPlaylistFetch = now;
+            playlist.save();
+        }
+
         Track[] trackArray = new Track[tracks.size()];
         tracks.toArray(trackArray);
         return trackArray;

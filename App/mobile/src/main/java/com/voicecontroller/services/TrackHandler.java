@@ -32,6 +32,11 @@ public class TrackHandler {
         QueryResults results = null;
         if (query.getType().equals(QueryType.PLAYLIST)) {
             results = lookProfilePlaylists(query);
+        } else if (query.getType().equals(QueryType.DEFAULT)) {
+            results = lookProfilePlaylists(query);
+            if (results == null) {
+                results = searchTrack(query);
+            }
         } else {
             results = searchTrack(query);
         }

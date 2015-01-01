@@ -227,7 +227,6 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
 
             builder.setContentIntent(getIntentFor(MAIN));
             notification = builder.build();
-            notification.visibility = Notification.VISIBILITY_PUBLIC;
             notification.bigContentView = new RemoteViews(getPackageName(), R.layout.notification_layout);
         }
 
@@ -345,7 +344,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         isInShuffleMode = shouldShuffle;
 
         if (shouldShuffle) {
-            Collections.shuffle(Arrays.asList(tracks));
+            Collections.shuffle(Arrays.asList(results.getTracks()));
         }
 
         if (!shouldEnqueue) {

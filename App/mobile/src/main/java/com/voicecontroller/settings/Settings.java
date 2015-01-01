@@ -25,6 +25,8 @@ public class Settings {
     // These are real constants
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
+    public static final int MINIMUM_TIME_BETWEEN_PLAYLIST_TRACKS_REFRESH = 3600 * 24; // one day
+    public static final int MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH = 3600; // 1hr
     public static final int NOTIFICATION_ID = 1;
     public static final int ERROR_NOTIFICATION_ID = 2;
     public static float MINIMUM_PLAYLIST_NAME_SIMILARITY = 0.7f; // 70%

@@ -13,6 +13,7 @@ public class Playlist extends SugarRecord<Playlist> {
     public String spotifyId;
     public String spotifyUri;
     public int tracksCount;
+    public int lastPlaylistFetch;
 
     public Playlist() {
     }
