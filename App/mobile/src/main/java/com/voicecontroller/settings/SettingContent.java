@@ -28,6 +28,7 @@ public class SettingContent {
         addItem(new SettingItem(Settings.ID.USE_NATIVE_PLAYER, R.string.use_native_player, R.string.use_native_player_desc, new int[] {R.string.yes, R.string.no}));
         addItem(new SettingItem(Settings.ID.BLUR_IMAGES, R.string.blur_images, R.string.blur_images_desc, new String[] {"8", "14", "0", "4"}));
         addItem(new SettingItem(Settings.ID.CONFIRMATION_TIME, R.string.confirmation_time, R.string.confirmation_time_desc, new String[] {"4", "5", "6", "7", "2", "3"}));
+        addItem(new SettingItem(Settings.ID.SIMILARITY_PERCENTAGE, R.string.similarity_percentage, R.string.similarity_percentage_desc, new String[] {"70%", "80%", "90%", "100%", "40%", "50%", "60%"}));
     }
 
     public static List<SettingItem> getItems() {

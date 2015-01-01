@@ -3,6 +3,8 @@ package com.voicecontroller.services;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
+
 import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.voicecontroller.models.Playlist;
@@ -61,7 +63,7 @@ public class TrackHandler {
 
         Playlist mostSimilarPlaylist = null;
         float mostSimilarVal = 0;
-        float minimumSimilarityVal = Settings.MINIMUM_PLAYLIST_NAME_SIMILARITY;
+        float minimumSimilarityVal = Settings.getSimilarityValue();
 
         AbstractStringMetric similarityMetric = new Levenshtein();
         String queryWithAlphaOnly = query.getQuery().replaceAll("[^a-zA-Z]+"," ").toLowerCase();
@@ -69,7 +71,7 @@ public class TrackHandler {
         for (Playlist p : playlists) {
             float similarityVal = similarityMetric.getSimilarity(queryWithAlphaOnly, p.name.toLowerCase());
 
-            if (similarityVal > minimumSimilarityVal && similarityVal > mostSimilarVal) {
+            if (similarityVal >= minimumSimilarityVal && similarityVal > mostSimilarVal) {
                 mostSimilarPlaylist = p;
                 mostSimilarVal = similarityVal;
             }

@@ -25,5 +25,7 @@
     <string name="help_description_image">Image showing voice controller selected on Android Wear app.</string>
     <string name="track_not_found_title">Song not found</string>
     <string name="track_not_found_desc">Your query had no matches.</string>
+    <string name="similarity_percentage">Playlist name similarity</string>
+    <string name="similarity_percentage_desc">How similar should be the playlist name and the query for them to be matched</string>
 
 </resources>
