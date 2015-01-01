@@ -104,21 +104,23 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
             public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
                 if (Intent.ACTION_MEDIA_BUTTON.equals(mediaButtonEvent.getAction())) {
                     KeyEvent event = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-                    if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode()) {
-                        resume();
-                        return true;
-                    } else if (KeyEvent.KEYCODE_MEDIA_PAUSE == event.getKeyCode()) {
-                        pause();
-                        return true;
-                    } else if (KeyEvent.KEYCODE_MEDIA_STOP == event.getKeyCode()) {
-                        pause();
-                        return true;
-                    } else if (KeyEvent.KEYCODE_MEDIA_NEXT == event.getKeyCode()) {
-                        next();
-                        return true;
-                    } else if (KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
-                        previous();
-                        return true;
+                    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                        if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode()) {
+                            resume();
+                            return true;
+                        } else if (KeyEvent.KEYCODE_MEDIA_PAUSE == event.getKeyCode()) {
+                            pause();
+                            return true;
+                        } else if (KeyEvent.KEYCODE_MEDIA_STOP == event.getKeyCode()) {
+                            pause();
+                            return true;
+                        } else if (KeyEvent.KEYCODE_MEDIA_NEXT == event.getKeyCode()) {
+                            next();
+                            return true;
+                        } else if (KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
+                            previous();
+                            return true;
+                        }
                     }
                 }
                 return super.onMediaButtonEvent(mediaButtonEvent);
