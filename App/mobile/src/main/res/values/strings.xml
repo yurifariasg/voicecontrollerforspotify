@@ -3,6 +3,7 @@
 
     <string name="app_name">Voice Controller for Spotify (BETA)</string>
     <string name="action_settings">Settings</string>
+    <string name="action_playlist">Rename playlists</string>
     <string name="action_help">Help</string>
     <string name="logged_in_as">Logged in as</string>
     <string name="sign_in">SIGN IN</string>
@@ -27,5 +28,10 @@
     <string name="track_not_found_desc">Your query had no matches.</string>
     <string name="similarity_percentage">Playlist name similarity</string>
     <string name="similarity_percentage_desc">How similar should be the playlist name and the query for them to be matched</string>
+    <string name="rename">Rename</string>
+    <string name="cancel">Cancel</string>
+    <string name="reset">Reset</string>
+    <string name="rename_playlist_dialog_title">Playlist Voice Name</string>
+    <string name="rename_playlist_dialog_desc">This action will not change the name on Spotify.</string>
 
 </resources>

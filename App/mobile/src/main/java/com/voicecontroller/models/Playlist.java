@@ -15,6 +15,8 @@ public class Playlist extends SugarRecord<Playlist> {
     public int tracksCount;
     public int lastPlaylistFetch;
 
+    public String nameForQuery;
+
     public Playlist() {
     }
 

@@ -69,7 +69,7 @@ public class TrackHandler {
         String queryWithAlphaOnly = query.getQuery().replaceAll("[^a-zA-Z]+"," ").toLowerCase();
 
         for (Playlist p : playlists) {
-            float similarityVal = similarityMetric.getSimilarity(queryWithAlphaOnly, p.name.toLowerCase());
+            float similarityVal = similarityMetric.getSimilarity(queryWithAlphaOnly, p.nameForQuery.toLowerCase());
 
             if (similarityVal >= minimumSimilarityVal && similarityVal > mostSimilarVal) {
                 mostSimilarPlaylist = p;
@@ -78,8 +78,11 @@ public class TrackHandler {
         }
 
         if (mostSimilarPlaylist != null) {
+
+            String subtitle = (mostSimilarPlaylist.name.equals(mostSimilarPlaylist.nameForQuery)) ? null : mostSimilarPlaylist.nameForQuery;
+
             return new QueryResults(mostSimilarPlaylist.spotifyId, mostSimilarPlaylist.spotifyUri,
-                    mostSimilarPlaylist.name, mostSimilarPlaylist.getImage(), QueryType.PLAYLIST);
+                    mostSimilarPlaylist.name, subtitle, mostSimilarPlaylist.getImage(), QueryType.PLAYLIST);
         } else {
             return null;
         }

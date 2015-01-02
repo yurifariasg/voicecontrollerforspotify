@@ -23,6 +23,10 @@ public class QueryResults {
         this(id, uri, name, null, image, type, null);
     }
 
+    public QueryResults(String id, String uri, String name, String subtitle, byte[] image, QueryType type) {
+        this(id, uri, name, subtitle, image, type, null);
+    }
+
     public QueryResults(String id, String uri, String name, String subtitle, byte[] image, QueryType type, Track[] tracks) {
         this.id = id;
         this.uri = uri;

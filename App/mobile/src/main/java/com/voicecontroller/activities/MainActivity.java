@@ -19,6 +19,7 @@ import com.crashlytics.android.Crashlytics;
 import com.voicecontroller.BuildConfig;
 import com.voicecontroller.R;
 import com.voicecontroller.fragments.HelpFragment;
+import com.voicecontroller.fragments.PlaylistNameFragment;
 import com.voicecontroller.fragments.SettingsFragment;
 import com.voicecontroller.callbacks.OnProfileAcquired;
 import com.voicecontroller.fragments.LoginFragment;
@@ -61,20 +62,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 @Override
                 protected Void doInBackground(Void... params) {
                     try {
-                        QueryResults results = SpotifyWebAPI.search("rise against", QueryType.DEFAULT);
+                        QueryResults results = SpotifyWebAPI.search("rise against", QueryType.TRACK);
 //                        results.fetchTracks("US");
                         Intent intent = new Intent(me, NativePlayer.class);
                         intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
-
-                        Track[] tracks = results.getTracks();
-                        Parcelable[] parcelables = new Parcelable[tracks.length];
-                        for (int i = 0; i < tracks.length; i++) {
-                            parcelables[i] = tracks[i].toBundle();
-                        }
-                        intent.putExtra("tracks", parcelables);
-                        if (results.getQuery() != null) {
-                            intent.putExtra("enqueue", results.getQuery().shouldEnqueue());
-                        }
+                        intent.putExtra("result", results.toBundle());
                         startService(intent);
                     } catch (Exception e) {
                         Log.e(Settings.APP_TAG, "Exception", e);
@@ -171,6 +163,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             HelpFragment fragment = HelpFragment.newInstance();
             switchTo(fragment);
             return true;
+        } else if (id == R.id.action_playlist) {
+            PlaylistNameFragment fragment = PlaylistNameFragment.newInstance();
+            switchTo(fragment);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -178,7 +174,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     @Override
     public void onBackPressed() {
-        if (mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment) {
+        if (mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment || mFragment instanceof PlaylistNameFragment) {
             initializeScreen();
             invalidateOptionsMenu();
         } else {
@@ -188,7 +184,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        return !(mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment);
+        return (mFragment instanceof ProfileFragment);
     }
 
     @Override
@@ -209,9 +205,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             FragmentTransaction ft = getFragmentManager().beginTransaction();
 
             if (mFragment != null) {
-                if (mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment) {
+                if (mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment || mFragment instanceof PlaylistNameFragment) {
                     ft.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right);
-                } else if (fragment instanceof SettingsFragment || fragment instanceof HelpFragment) {
+                } else if (fragment instanceof SettingsFragment || fragment instanceof HelpFragment || fragment instanceof PlaylistNameFragment) {
                     ft.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left);
                 } else if (fragment instanceof ProfileFragment) {
                     ft.setCustomAnimations(R.animator.slide_in_bottom, R.animator.slide_out_top);

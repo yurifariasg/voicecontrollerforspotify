@@ -509,6 +509,7 @@ public class SpotifyWebAPI {
 
         playlist.profile = userProfile;
         playlist.name = name;
+        playlist.nameForQuery = name;
         playlist.spotifyId = spotifyId;
         playlist.spotifyUri = spotifyUri;
         playlist.tracksCount = tracksCount;
