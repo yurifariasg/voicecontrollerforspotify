@@ -28,6 +28,7 @@ import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.QueryType;
 import com.voicecontroller.models.Track;
+import com.voicecontroller.models.VoiceQuery;
 import com.voicecontroller.nativeplayer.NativePlayer;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
@@ -56,15 +57,24 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         }
         Fabric.with(this, crashlytics);
 
+        mainActivity = new WeakReference<>(this);
+        setContentView(R.layout.activity_main);
+        fl = (FrameLayout) findViewById(R.id.main_layout);
+        initializeScreen();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         if (Settings.MOCK_WATCH_REQUEST) {
-            final MainActivity me = this;
-            new AsyncTask<Void,Void,Void>() {
+            new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... params) {
                     try {
-                        QueryResults results = SpotifyWebAPI.search("rise against", QueryType.TRACK);
-//                        results.fetchTracks("US");
-                        Intent intent = new Intent(me, NativePlayer.class);
+                        QueryResults results = SpotifyWebAPI.search("rise against", QueryType.ARTIST);
+                        VoiceQuery query = new VoiceQuery("rise against artist shuffle repeat");
+                        results.setVoiceQuery(query);
+                        Intent intent = new Intent(mainActivity.get(), NativePlayer.class);
                         intent.setAction(NativePlayer.PLAY_CONTROL_ACTION);
                         intent.putExtra("result", results.toBundle());
                         startService(intent);
@@ -75,16 +85,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 }
             }.execute();
         }
-
-        mainActivity = new WeakReference<>(this);
-        setContentView(R.layout.activity_main);
-        fl = (FrameLayout) findViewById(R.id.main_layout);
-        initializeScreen();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
     }
 
     private void initializeScreen() {
