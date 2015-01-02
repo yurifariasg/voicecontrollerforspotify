@@ -314,7 +314,7 @@ public class DonationsFragment extends android.app.Fragment {
         dialog.setTitle(title);
         dialog.setMessage(message);
         dialog.setCancelable(true);
-        dialog.setNeutralButton(R.string.donations__button_close,
+        dialog.setPositiveButton(R.string.donations__button_close,
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

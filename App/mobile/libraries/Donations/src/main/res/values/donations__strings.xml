@@ -15,14 +15,13 @@
     <string name="donations__google_android_market_text">How much?</string>
     <string name="donations__paypal">PayPal</string>
     <string name="donations__paypal_description">Paypal allows you to choose the amount you want to donate.</string>
-    <string name="donations__thanks_dialog_title">Thanks!</string>
-    <string name="donations__thanks_dialog">Thanks for donating!\nI really appreciate this!</string>
+    <string name="donations__thanks_dialog_title">Thank You!</string>
+    <string name="donations__thanks_dialog">You just made a big group of baby seals very happy, my friend!</string>
     <string name="donations__alert_dialog_title">Error occurred</string>
     <string name="donations__alert_dialog_no_browser">No browser was found to open a website!</string>
     <string name="donations__bitcoin">Bitcoin</string>
     <string name="donations__bitcoin_description">Send any amount of bitcoin to the developer. Press and hold button to copy address.</string>
     <string name="donations__bitcoin_send_bitcoin_button">Send bitcoin!</string>
     <string name="donations__bitcoin_toast_copy">Bitcoin address has been copied to the clipboard!</string>
-
 
 </resources>
