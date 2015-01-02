@@ -26,6 +26,14 @@ public class Settings {
     // These are real constants
     public static final String APP_TAG = "VoiceControllerForSpotify";
 
+    public static final String GOOGLE_PUBKEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk8CgP7WdPeclIY7w2iGxykDanU4Amkp44B0vX7g49o+2uD1eV1cKwLZdjjBs2uj2bGuYrmx72sTcTankW8tGCulPjIiGxbas/dhsveArOYMZLiVOvI7+YGzopZpxetpqGrVCfRCbKVYX1wDPtEEoOknyYqjLnlxGrVSo498LnGLlQbJnfIKEYarU7BDS+kXGSU8wMgk9Fs+B+bxxMF+J9C0p0zitRfFrUECJj7/kaxYWaDgOX5hFkp4PTXJ40J0kx3F8hR/UpnSxyOqYfUge/k+ZiGOqlsawKjTbIunbj+jlvmEAkMecsSq44vxDd3I4jyoqiBKaMEs9KBoPMjud/wIDAQAB";
+    public static final String[] GOOGLE_CATALOG = new String[]{"com.voicecontroller.managed.donation.1",
+    "com.voicecontroller.managed.donation.2", "com.voicecontroller.managed.donation.5",
+    "com.voicecontroller.managed.donation.8", "com.voicecontroller.managed.donation.15"};
+
+    public static final String PAYPAL_USER = "yurifariasg@gmail.com";
+    public static final String PAYPAL_CURRENCY_CODE = "USD";
+
     public static final int MINIMUM_TIME_BETWEEN_PLAYLIST_TRACKS_REFRESH = 3600 * 24; // one day
     public static final int MINIMUM_TIME_BETWEEN_PLAYLIST_REFRESH = 3600; // 1hr
     public static final int NOTIFICATION_ID = 1;

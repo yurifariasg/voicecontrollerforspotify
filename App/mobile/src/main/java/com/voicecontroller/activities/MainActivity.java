@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -27,13 +26,14 @@ import com.voicecontroller.fragments.ProfileFragment;
 import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.QueryType;
-import com.voicecontroller.models.Track;
 import com.voicecontroller.models.VoiceQuery;
 import com.voicecontroller.nativeplayer.NativePlayer;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
+
+import org.sufficientlysecure.donations.DonationsFragment;
 
 import java.lang.ref.WeakReference;
 
@@ -167,14 +167,36 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             PlaylistNameFragment fragment = PlaylistNameFragment.newInstance();
             switchTo(fragment);
             return true;
+        } else if (id == R.id.action_donate) {
+            DonationsFragment fragment = DonationsFragment.newInstance(false, true, Settings.GOOGLE_PUBKEY, Settings.GOOGLE_CATALOG,
+                    getResources().getStringArray(R.array.donation_google_catalog_values), true, Settings.PAYPAL_USER, Settings.PAYPAL_CURRENCY_CODE,
+                    getString(R.string.donation_paypal_item), false, null, null, false, null);
+            switchTo(fragment);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Needed for Google Play In-app Billing. It uses startIntentSenderForResult(). The result is not propagated to
+     * the Fragment like in startActivityForResult(). Thus we need to propagate manually to our Fragment.
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (mFragment != null) {
+            mFragment.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
     @Override
     public void onBackPressed() {
-        if (mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment || mFragment instanceof PlaylistNameFragment) {
+        if (!(mFragment instanceof LoginFragment || mFragment instanceof ProfileFragment)) {
             initializeScreen();
             invalidateOptionsMenu();
         } else {
@@ -205,13 +227,13 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             FragmentTransaction ft = getFragmentManager().beginTransaction();
 
             if (mFragment != null) {
-                if (mFragment instanceof SettingsFragment || mFragment instanceof HelpFragment || mFragment instanceof PlaylistNameFragment) {
+                if (!(mFragment instanceof LoginFragment || mFragment instanceof ProfileFragment)) {
                     ft.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right);
-                } else if (fragment instanceof SettingsFragment || fragment instanceof HelpFragment || fragment instanceof PlaylistNameFragment) {
+                } else if (!(fragment instanceof ProfileFragment || fragment instanceof LoginFragment)) {
                     ft.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left);
                 } else if (fragment instanceof ProfileFragment) {
                     ft.setCustomAnimations(R.animator.slide_in_bottom, R.animator.slide_out_top);
-                } else if (fragment instanceof LoginFragment) {
+                } else {
                     ft.setCustomAnimations(R.animator.slide_in_top, R.animator.slide_out_bottom);
                 }
             }

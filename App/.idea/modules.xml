@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/App.iml" filepath="$PROJECT_DIR$/App.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mobile/libraries/Donations/Donations.iml" filepath="$PROJECT_DIR$/mobile/libraries/Donations/Donations.iml" />
       <module fileurl="file://$PROJECT_DIR$/VoiceController.iml" filepath="$PROJECT_DIR$/VoiceController.iml" />
       <module fileurl="file://$PROJECT_DIR$/mobile/mobile.iml" filepath="$PROJECT_DIR$/mobile/mobile.iml" />
       <module fileurl="file://$PROJECT_DIR$/wear/wear.iml" filepath="$PROJECT_DIR$/wear/wear.iml" />

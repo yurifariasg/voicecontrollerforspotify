@@ -1,1 +1,2 @@
-include ':mobile', ':wear'
+include ':mobile', ':wear', ':libraries:Donations'
+project(':libraries:Donations').projectDir = new File('mobile/libraries/Donations')
