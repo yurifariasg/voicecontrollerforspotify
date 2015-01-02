@@ -8,15 +8,35 @@
         android:layout_height="wrap_content"
         android:isScrollContainer="true"
         android:orientation="vertical"
-        android:padding="15dp"
-        android:scrollbars="vertical" >
+        android:scrollbars="vertical"
+        android:paddingTop="@dimen/fragment_vertical_margin"
+        android:paddingBottom="@dimen/fragment_vertical_margin"
+        android:paddingLeft="@dimen/fragment_horizontal_margin"
+        android:paddingRight="@dimen/fragment_horizontal_margin">
+
+        <ImageView
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/imageView"
+            android:layout_marginTop="-5dp"
+            android:src="@drawable/app_icon"/>
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="@string/donations__donation_title"
+            android:textAppearance="@android:style/TextAppearance.Large" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:text="@string/donations__description"
-            android:textAppearance="@android:style/TextAppearance.Small" />
+            android:text="@string/donations__donation_desc"
+            android:textAppearance="@android:style/TextAppearance.Small"
+            android:layout_marginBottom="20dp"/>
 
         <ViewStub
             android:id="@+id/donations__flattr_stub"

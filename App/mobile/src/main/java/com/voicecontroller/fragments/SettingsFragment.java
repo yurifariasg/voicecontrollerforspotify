@@ -29,6 +29,9 @@ public class SettingsFragment extends ListFragment {
         super.onCreate(savedInstanceState);
         SettingContent.updateValuesFromDatabase();
         setListAdapter(new SettingsAdapter(getActivity(), SettingContent.getItems()));
+
+
+//        getListView().setLayoutParams();
     }
 
     @Override

@@ -9,9 +9,11 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.orm.query.Condition;

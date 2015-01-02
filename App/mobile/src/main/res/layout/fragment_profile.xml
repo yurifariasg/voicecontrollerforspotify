@@ -1,7 +1,11 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.voicecontroller.fragments.ProfileFragment">
+    tools:context="com.voicecontroller.fragments.ProfileFragment"
+    android:paddingTop="@dimen/fragment_vertical_margin"
+    android:paddingBottom="@dimen/fragment_vertical_margin"
+    android:paddingLeft="@dimen/fragment_horizontal_margin"
+    android:paddingRight="@dimen/fragment_horizontal_margin">
 
     <Button
         android:layout_marginLeft="30dp"
@@ -18,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Hello World SUper long text that exceeds everything"
+        android:text="user name"
         android:singleLine="true" android:ellipsize="end"
 
         android:textSize="40sp"
