@@ -1,10 +1,10 @@
 package com.voicecontroller.fragments;
 
 import android.app.AlertDialog;
+import android.app.ListFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.app.ListFragment;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
@@ -17,39 +17,24 @@ import android.widget.ListView;
 import com.orm.query.Condition;
 import com.orm.query.Select;
 import com.voicecontroller.R;
-
+import com.voicecontroller.models.MediaCommand;
+import com.voicecontroller.models.MediaCommandType;
 import com.voicecontroller.models.Playlist;
 import com.voicecontroller.models.Profile;
 import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
+import com.voicecontroller.utils.GeneralUtils;
+import com.voicecontroller.views.CommandRenameAdapter;
 import com.voicecontroller.views.PlaylistRenameAdapter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
-public class PlaylistNameFragment extends ListFragment {
+public class MediaCommandRenameFragment extends ListFragment {
 
-    private static final String BLOCK_CHARACTER_SET = "~#^|$%&*!";
-
-    private static InputFilter filter = new InputFilter() {
-
-        @Override
-        public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-
-            if (source != null && BLOCK_CHARACTER_SET.contains(("" + source))) {
-                return "";
-            }
-            for (int i = start; i < end; i++) {
-                if (!Character.isLetterOrDigit(source.charAt(i))) {
-                    return "";
-                }
-            }
-            return null;
-        }
-    };
-
-    public static PlaylistNameFragment newInstance() {
-        PlaylistNameFragment fragment = new PlaylistNameFragment();
+    public static MediaCommandRenameFragment newInstance() {
+        MediaCommandRenameFragment fragment = new MediaCommandRenameFragment();
         return fragment;
     }
 
@@ -57,24 +42,35 @@ public class PlaylistNameFragment extends ListFragment {
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public PlaylistNameFragment() {
+    public MediaCommandRenameFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ArrayList<MediaCommand> mediaCommandArrayList = new ArrayList<>();
 
-        OAuthRecord oauth = OAuthService.getOAuthToken();
-        Profile profile = null;
-        List<Playlist> playlists = null;
-        if (oauth != null && oauth.isValid()) {
-            profile = Select.from(Profile.class).where(Condition.prop("OAUTH").eq(oauth.getId())).first();
-            playlists = Select.from(Playlist.class).where(Condition.prop("PROFILE").eq(profile.getId())).list();
+        for (MediaCommandType type : MediaCommandType.values()) {
+            MediaCommand command = queryCommand(type);
+            if (command == null) {
+                command = createCommand(type);
+            }
+            mediaCommandArrayList.add(command);
         }
 
-        if (playlists != null) {
-            setListAdapter(new PlaylistRenameAdapter(getActivity(), playlists));
-        }
+        setListAdapter(new CommandRenameAdapter(getActivity(), mediaCommandArrayList));
+    }
+
+    private MediaCommand createCommand(MediaCommandType type) {
+        MediaCommand command = new MediaCommand();
+        command.name = GeneralUtils.toCapitalize(type.toString());
+        command.type = type.toString();
+        command.save();
+        return command;
+    }
+
+    private MediaCommand queryCommand(MediaCommandType type) {
+        return Select.from(MediaCommand.class).where(Condition.prop("TYPE").eq(type.toString())).first();
     }
 
     @Override
@@ -85,36 +81,29 @@ public class PlaylistNameFragment extends ListFragment {
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         input.setFocusable(true);
 
-        final Playlist p = (Playlist) getListView().getItemAtPosition(position);
+        final MediaCommand command = (MediaCommand) getListView().getItemAtPosition(position);
 
-        input.setText(p.nameForQuery);
-        input.setSelection(p.nameForQuery.length());
+        input.setText(command.name == null ?  "" : command.name);
+        if (command.name != null) {
+            input.setSelection(command.name.length());
+        }
 
         final AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
-        alertDialog.setTitle(getString(R.string.rename_playlist_dialog_title));
-        alertDialog.setMessage(getString(R.string.rename_playlist_dialog_desc));
+        alertDialog.setTitle(getString(R.string.rename_command_dialog_title));
+        alertDialog.setMessage(getString(R.string.rename_command_dialog_desc));
         alertDialog.setView(input, 40, 0, 40, 0); // 40 spacing, left and right
         alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.rename), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // Clicked
-                if (input.getText() != null) {
-                    p.nameForQuery = input.getText().toString();
+                if (input.getText() != null && !input.getText().toString().isEmpty()) {
+                    command.name= input.getText().toString();
                 } else {
-                    p.nameForQuery = "";
+                    command.name = GeneralUtils.toCapitalize(command.type);
                 }
-                p.save();
+                command.save();
 
                 ((BaseAdapter) getListAdapter()).notifyDataSetChanged();
-            }
-        });
-        alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, getString(R.string.reset), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                p.nameForQuery = p.name;
-                p.save();
-                ((BaseAdapter) getListAdapter()).notifyDataSetChanged();
-
             }
         });
         alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), new DialogInterface.OnClickListener() {

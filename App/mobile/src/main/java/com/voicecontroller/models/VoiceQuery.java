@@ -3,6 +3,8 @@ package com.voicecontroller.models;
 
 import android.os.Bundle;
 
+import com.orm.query.Condition;
+import com.orm.query.Select;
 import com.voicecontroller.utils.GeneralUtils;
 
 import java.util.HashMap;
@@ -20,19 +22,14 @@ public class VoiceQuery {
     public static final String REPEAT_KEYWORD_KEY = "repeat";
     public static final String SHUFFLE_KEYWORD_KEY = "shuffle";
 
-    public static final String RESUME_KEYWORD_KEY = "resume";
-    public static final String PAUSE_KEYWORD_KEY = "pause";
-    public static final String SKIP_KEYWORD_KEY = "skip";
-    public static final String PREVIOUS_KEYWORD_KEY = "previous";
-
-    public static final HashMap<String, String[]> KEYWORDS_COMMANDS;
+    public static final HashMap<MediaCommandType, String[]> KEYWORDS_COMMANDS;
     static {
         KEYWORDS_COMMANDS = new HashMap<>();
 
-        KEYWORDS_COMMANDS.put(RESUME_KEYWORD_KEY, toArray("resume", "play", "resume track", "resume song"));
-        KEYWORDS_COMMANDS.put(PAUSE_KEYWORD_KEY, toArray("pause", "stop"));
-        KEYWORDS_COMMANDS.put(SKIP_KEYWORD_KEY, toArray("skip", "next"));
-        KEYWORDS_COMMANDS.put(PREVIOUS_KEYWORD_KEY, toArray("previous", "go back"));
+        KEYWORDS_COMMANDS.put(MediaCommandType.RESUME, toArray("resume", "play", "resume track", "resume song"));
+        KEYWORDS_COMMANDS.put(MediaCommandType.PAUSE, toArray("pause", "stop"));
+        KEYWORDS_COMMANDS.put(MediaCommandType.SKIP, toArray("skip", "next"));
+        KEYWORDS_COMMANDS.put(MediaCommandType.PREVIOUS, toArray("previous", "go back"));
     }
 
     public static final String[] COMMAND_SUFFIX = toArray("", " track", " music", " song", " playback");
@@ -125,35 +122,29 @@ public class VoiceQuery {
     }
 
     private void extractMediaCommands() {
-        for (String key : KEYWORDS_COMMANDS.keySet()) {
+        for (MediaCommandType key : KEYWORDS_COMMANDS.keySet()) {
             for (String command : KEYWORDS_COMMANDS.get(key)) {
                 for (String suffix : COMMAND_SUFFIX) {
                     if (query.equalsIgnoreCase(command + suffix)) {
                         handleMediaCommand(key);
                     }
                 }
+
+                MediaCommand mediaCommand = Select.from(MediaCommand.class).where(Condition.prop("TYPE").eq(key.toString())).first();
+                if (mediaCommand != null && mediaCommand.name != null && !mediaCommand.name.isEmpty()) {
+                    for (String suffix : COMMAND_SUFFIX) {
+                        if (query.equalsIgnoreCase(mediaCommand.name + suffix)) {
+                            handleMediaCommand(key);
+                        }
+                    }
+                }
             }
         }
     }
 
-    private void handleMediaCommand(String commandKey) {
+    private void handleMediaCommand(MediaCommandType commandType) {
         if (mediaCommandType == null) {
-            switch (commandKey) {
-                case RESUME_KEYWORD_KEY:
-                    mediaCommandType = MediaCommandType.RESUME;
-                    break;
-                case PAUSE_KEYWORD_KEY:
-                    mediaCommandType = MediaCommandType.PAUSE;
-                    break;
-                case SKIP_KEYWORD_KEY:
-                    mediaCommandType = MediaCommandType.SKIP;
-                    break;
-                case PREVIOUS_KEYWORD_KEY:
-                    mediaCommandType = MediaCommandType.PREVIOUS;
-                    break;
-                default:
-                    break;
-            }
+            mediaCommandType = commandType;
         }
         if (mediaCommandType != null) {
             isMediaCommand = true;

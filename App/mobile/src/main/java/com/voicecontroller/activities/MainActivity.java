@@ -18,6 +18,7 @@ import com.crashlytics.android.Crashlytics;
 import com.voicecontroller.BuildConfig;
 import com.voicecontroller.R;
 import com.voicecontroller.fragments.HelpFragment;
+import com.voicecontroller.fragments.MediaCommandRenameFragment;
 import com.voicecontroller.fragments.PlaylistNameFragment;
 import com.voicecontroller.fragments.SettingsFragment;
 import com.voicecontroller.callbacks.OnProfileAcquired;
@@ -32,6 +33,7 @@ import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
+import com.voicecontroller.views.CommandRenameAdapter;
 
 import org.sufficientlysecure.donations.DonationsFragment;
 
@@ -165,6 +167,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             return true;
         } else if (id == R.id.action_playlist) {
             PlaylistNameFragment fragment = PlaylistNameFragment.newInstance();
+            switchTo(fragment);
+            return true;
+        } else if (id == R.id.action_commands) {
+            MediaCommandRenameFragment fragment = MediaCommandRenameFragment.newInstance();
             switchTo(fragment);
             return true;
         } else if (id == R.id.action_donate) {

@@ -33,6 +33,10 @@ public class GeneralUtils {
         return null;
     }
 
+    public static String toCapitalize(String word) {
+        return Character.toUpperCase(word.charAt(0)) + word.substring(1).toLowerCase();
+    }
+
     public static byte[] blurImage(byte[] img, Context context) {
         if (img == null) {
             return img;
