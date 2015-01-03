@@ -1,14 +1,8 @@
 package com.voicecontroller.oauth;
 
-
-import com.orm.StringUtil;
 import com.orm.SugarRecord;
 import com.voicecontroller.settings.Settings;
-
 import java.util.Arrays;
-
-import uk.ac.shef.wit.simmetrics.similaritymetrics.AbstractStringMetric;
-import uk.ac.shef.wit.simmetrics.similaritymetrics.MongeElkan;
 
 public class OAuthRecord extends SugarRecord<OAuthRecord> {
 

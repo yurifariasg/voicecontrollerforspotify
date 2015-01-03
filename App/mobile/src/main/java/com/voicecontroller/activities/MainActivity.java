@@ -238,6 +238,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 }
             }
 
+            if (mFragment == null) {
+                fl.removeAllViewsInLayout();
+            }
+
             invalidateOptionsMenu();
             ft.replace(fl.getId(), fragment).commitAllowingStateLoss();
             mFragment = fragment;

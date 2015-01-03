@@ -29,6 +29,7 @@
         android:id="@+id/userNameTv"
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
+        android:textAppearance="@android:style/TextAppearance.Large"
         android:layout_gravity="center_horizontal" />
 
     <TextView
@@ -37,6 +38,7 @@
         android:layout_above="@id/userNameTv"
         android:text="@string/logged_in_as"
         android:textSize="20sp"
+        android:textAppearance="@android:style/TextAppearance.Small"
         android:id="@+id/loggedInTv"
         android:layout_gravity="start" />
 

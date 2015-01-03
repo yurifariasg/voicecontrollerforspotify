@@ -16,20 +16,20 @@
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/title_help"
             android:id="@+id/helpTv1"
-            android:layout_marginBottom="10dp"
-            android:textSize="25sp"/>
+            android:textAppearance="@android:style/TextAppearance.Large"
+            android:layout_marginBottom="10dp"/>
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/help_1"
             android:layout_marginTop="5dp"
-            android:textSize="16sp"
             android:layout_marginBottom="5dp"
+            android:textAppearance="@android:style/TextAppearance.Small"
             android:id="@+id/helpTv2"/>
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:id="@+id/helpTv3"
             android:layout_marginTop="5dp"
-            android:textSize="16sp"
+            android:textAppearance="@android:style/TextAppearance.Small"
             android:layout_marginBottom="5dp"
             android:text="@string/help_2" />
 
@@ -45,7 +45,7 @@
             android:id="@+id/helpTv4"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
-            android:textSize="16sp"
+            android:textAppearance="@android:style/TextAppearance.Small"
             android:text="@string/help_3" />
 
         </LinearLayout>
