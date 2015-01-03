@@ -13,6 +13,7 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.voicecontroller.BuildConfig;
+import com.voicecontroller.models.MediaCommandType;
 import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.VoiceQuery;
 import com.voicecontroller.settings.Settings;
@@ -80,10 +81,37 @@ public class ListenerFromWear extends WearableListenerService {
 
     private void onQueryReceived(String query, WearableConnection connection) throws JSONException, UnsupportedEncodingException {
         VoiceQuery voiceQuery = new VoiceQuery(query);
-        QueryResults results = TrackHandler.lookForTrack(voiceQuery, connection, this);
-        if (results != null) {
-            queryResults.put(results.getId(), results);
+
+        if (voiceQuery.isMediaCommand()) {
+            sendMediaCommand(voiceQuery.getMediaCommand());
+        } else {
+            QueryResults results = TrackHandler.lookForTrack(voiceQuery, connection, this);
+            if (results != null) {
+                queryResults.put(results.getId(), results);
+            }
         }
+    }
+
+    private void sendMediaCommand(MediaCommandType type) {
+        Intent i = new Intent(this, NativePlayer.class);
+        i.setAction(NativePlayer.MEDIA_CONTROL_ACTION);
+        switch (type) {
+            case RESUME:
+                i.putExtra("cmd", NativePlayer.PLAY);
+                break;
+            case PAUSE:
+                i.putExtra("cmd", NativePlayer.PAUSE);
+                break;
+            case SKIP:
+                i.putExtra("cmd", NativePlayer.NEXT);
+                break;
+            case PREVIOUS:
+                i.putExtra("cmd", NativePlayer.PREVIOUS_FORCE);
+                break;
+            default:
+                break;
+        }
+        startService(i);
     }
 
     private void onConfirmationReceived(String confirmationId, final WearableConnection connection) {

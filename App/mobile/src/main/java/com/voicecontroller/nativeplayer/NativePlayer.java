@@ -56,6 +56,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
     public static final int CLOSE = 5;
     public static final int MAIN = 6;
     public static final int PREVIOUS = 7;
+    public static final int PREVIOUS_FORCE = 8;
 
     public static final String MEDIA_CONTROL_ACTION = "com.voicecontroller.music.cmd";
     public static final String PLAY_CONTROL_ACTION = "com.voicecontroller.music.play";
@@ -118,7 +119,7 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                             next();
                             return true;
                         } else if (KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
-                            previous();
+                            previous(false);
                             return true;
                         }
                     }
@@ -292,7 +293,10 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
                         next();
                         break;
                     case PREVIOUS:
-                        previous();
+                        previous(false);
+                        break;
+                    case PREVIOUS_FORCE:
+                        previous(true);
                         break;
                     case CLOSE:
                         close();
@@ -427,13 +431,13 @@ public class NativePlayer extends Service implements PlayerNotificationCallback,
         }
     }
 
-    public void previous() {
+    public void previous(final boolean force) {
         if (mPlayer != null && mPlayer.isInitialized()) {
             mPlayer.getPlayerState(new PlayerStateCallback() {
                 @Override
                 public void onPlayerState(PlayerState playerState) {
                     int positionMs = playerState.positionInMs;
-                    if (positionMs < 3000) {
+                    if (positionMs < 3000 || force) {
                         playPrevious();
                     } else {
                         mPlayer.seekToPosition(0);

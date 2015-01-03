@@ -2,9 +2,7 @@ package com.voicecontroller.models;
 
 
 import android.os.Bundle;
-import android.util.Log;
 
-import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.GeneralUtils;
 
 import java.util.HashMap;
@@ -22,18 +20,35 @@ public class VoiceQuery {
     public static final String REPEAT_KEYWORD_KEY = "repeat";
     public static final String SHUFFLE_KEYWORD_KEY = "shuffle";
 
-    public static final HashMap<String, String[]> KEYWORDS;
+    public static final String RESUME_KEYWORD_KEY = "resume";
+    public static final String PAUSE_KEYWORD_KEY = "pause";
+    public static final String SKIP_KEYWORD_KEY = "skip";
+    public static final String PREVIOUS_KEYWORD_KEY = "previous";
+
+    public static final HashMap<String, String[]> KEYWORDS_COMMANDS;
     static {
-        KEYWORDS = new HashMap<>();
+        KEYWORDS_COMMANDS = new HashMap<>();
+
+        KEYWORDS_COMMANDS.put(RESUME_KEYWORD_KEY, toArray("resume", "play", "resume track", "resume song"));
+        KEYWORDS_COMMANDS.put(PAUSE_KEYWORD_KEY, toArray("pause", "stop"));
+        KEYWORDS_COMMANDS.put(SKIP_KEYWORD_KEY, toArray("skip", "next"));
+        KEYWORDS_COMMANDS.put(PREVIOUS_KEYWORD_KEY, toArray("previous", "go back"));
+    }
+
+    public static final String[] COMMAND_SUFFIX = toArray("", " track", " music", " song", " playback");
+
+    public static final HashMap<String, String[]> KEYWORDS_MODIFIERS;
+    static {
+        KEYWORDS_MODIFIERS = new HashMap<>();
 
         /* These should be updated depending on language */
         /* Always remember to put composed-phrases before */
-        KEYWORDS.put(ENQUEUE_KEYWORD_KEY, toArray("next"));
-        KEYWORDS.put(ARTIST_KEYWORD_KEY, toArray("artist"));
-        KEYWORDS.put(PLAYLIST_KEYWORD_KEY, toArray("playlist"));
-        KEYWORDS.put(TRACK_KEYWORD_KEY, toArray("song", "track"));
-        KEYWORDS.put(REPEAT_KEYWORD_KEY, toArray("on repeat", "repeated", "repeat"));
-        KEYWORDS.put(SHUFFLE_KEYWORD_KEY, toArray("on shuffle", "shuffled", "shuffle"));
+        KEYWORDS_MODIFIERS.put(ENQUEUE_KEYWORD_KEY, toArray("next"));
+        KEYWORDS_MODIFIERS.put(ARTIST_KEYWORD_KEY, toArray("artist"));
+        KEYWORDS_MODIFIERS.put(PLAYLIST_KEYWORD_KEY, toArray("playlist"));
+        KEYWORDS_MODIFIERS.put(TRACK_KEYWORD_KEY, toArray("song", "track"));
+        KEYWORDS_MODIFIERS.put(REPEAT_KEYWORD_KEY, toArray("on repeat", "repeated", "repeat"));
+        KEYWORDS_MODIFIERS.put(SHUFFLE_KEYWORD_KEY, toArray("on shuffle", "shuffled", "shuffle"));
     }
 
     private String query = null;
@@ -41,6 +56,9 @@ public class VoiceQuery {
     private boolean enqueue = false;
     private boolean shuffle = false;
     private boolean repeat = false;
+
+    private boolean isMediaCommand = false;
+    private MediaCommandType mediaCommandType = null;
 
     public VoiceQuery(String rawQuery) {
         parseRawQuery(rawQuery);
@@ -80,30 +98,78 @@ public class VoiceQuery {
         return enqueue;
     }
 
+    public boolean isMediaCommand() {
+        return isMediaCommand;
+    }
+
     public boolean shouldRepeat() { return repeat; }
 
     public boolean shouldShuffle() { return shuffle; }
 
+    public MediaCommandType getMediaCommand() {
+        return mediaCommandType;
+    }
+
     private void parseRawQuery(String rawQuery) {
         this.query = rawQuery.toLowerCase().trim();
 
-        boolean keepExtracting = true;
-        while (keepExtracting) {
-            keepExtracting = extractAndUpdate();
+        extractMediaCommands();
+
+        if (!isMediaCommand) {
+            boolean keepExtracting = true;
+            while (keepExtracting) {
+                keepExtracting = extractAndUpdate();
+            }
         }
 
     }
 
+    private void extractMediaCommands() {
+        for (String key : KEYWORDS_COMMANDS.keySet()) {
+            for (String command : KEYWORDS_COMMANDS.get(key)) {
+                for (String suffix : COMMAND_SUFFIX) {
+                    if (query.equalsIgnoreCase(command + suffix)) {
+                        handleMediaCommand(key);
+                    }
+                }
+            }
+        }
+    }
+
+    private void handleMediaCommand(String commandKey) {
+        if (mediaCommandType == null) {
+            switch (commandKey) {
+                case RESUME_KEYWORD_KEY:
+                    mediaCommandType = MediaCommandType.RESUME;
+                    break;
+                case PAUSE_KEYWORD_KEY:
+                    mediaCommandType = MediaCommandType.PAUSE;
+                    break;
+                case SKIP_KEYWORD_KEY:
+                    mediaCommandType = MediaCommandType.SKIP;
+                    break;
+                case PREVIOUS_KEYWORD_KEY:
+                    mediaCommandType = MediaCommandType.PREVIOUS;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (mediaCommandType != null) {
+            isMediaCommand = true;
+        }
+    }
+
     private boolean extractAndUpdate() {
-        for (String key : KEYWORDS.keySet()) {
-            String matchedPrefix = GeneralUtils.startWithAny(query, KEYWORDS.get(key));
+        for (String key : KEYWORDS_MODIFIERS.keySet()) {
+            String matchedPrefix = GeneralUtils.startWithAny(query, KEYWORDS_MODIFIERS.get(key));
             if (matchedPrefix != null) {
                 handleNewProperty(key);
                 query = query.substring(matchedPrefix.length()).trim();
                 return true;
             } else {
                 // Try to get suffix
-                String matchedSuffix = GeneralUtils.endWithAny(query, KEYWORDS.get(key));
+                String matchedSuffix = GeneralUtils.endWithAny(query, KEYWORDS_MODIFIERS.get(key));
                 if (matchedSuffix != null) {
                     handleNewProperty(key);
                     query = query.substring(0, query.lastIndexOf(matchedSuffix)).trim();
