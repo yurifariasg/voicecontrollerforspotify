@@ -20,8 +20,8 @@ android {
         applicationId "com.voicecontroller"
         minSdkVersion 19
         targetSdkVersion 21
-        versionCode 8
-        versionName "1.0.7"
+        versionCode 10
+        versionName "1.1.0"
     }
     buildTypes {
         release {
