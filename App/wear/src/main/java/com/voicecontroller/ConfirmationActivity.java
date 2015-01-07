@@ -86,7 +86,7 @@ public class ConfirmationActivity extends Activity
     @Override
     public void onTimerFinished(View view) {
         if (trackConfirmed) {
-            MobileConnection.getInstance().confirmTrack(trackUri, this);
+            MobileConnection.getInstance(this).confirmTrack(trackUri, this);
         }
 
         if (mWakeLock.isHeld()) {

@@ -9,7 +9,5 @@
     <string name="confirmation_sent">Confirmation sent!</string>
     <string name="confirmation_failed">Could not send confirmation.</string>
     <string name="query_failed">Could not send query to device.</string>
-    <string name="no_results_title">Oops… :(</string>
-    <string name="no_results_description">Your query had no results. Want to try it again?</string>
 
 </resources>

@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" android:id="@+id/watch_view_stub"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    app:rectLayout="@layout/rect_activity_no_results"
-    app:roundLayout="@layout/round_activity_no_results"
-    tools:context="com.voicecontroller.NoResultsActivity"
+    app:rectLayout="@layout/rect_activity_alert"
+    app:roundLayout="@layout/round_activity_alert"
+    tools:context="com.voicecontroller.AlertActivity"
     tools:deviceIds="wear"></android.support.wearable.view.WatchViewStub>

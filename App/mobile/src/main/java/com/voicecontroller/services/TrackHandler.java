@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.orm.query.Condition;
 import com.orm.query.Select;
+import com.voicecontroller.R;
 import com.voicecontroller.models.Playlist;
 import com.voicecontroller.models.Profile;
 import com.voicecontroller.models.QueryResults;
@@ -47,7 +48,7 @@ public class TrackHandler {
             results.setVoiceQuery(query);
             connection.requestConfirmation(results.toQueryResult(), context);
         } else {
-            connection.sendNoResults();
+            connection.sendAlert(context.getString(R.string.no_results_title), context.getString(R.string.no_results_description));
         }
         return results;
     }

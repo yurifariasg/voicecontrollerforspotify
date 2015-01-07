@@ -17,7 +17,7 @@
         android:layout_height="wrap_content" android:layout_centerHorizontal="true"
         android:textSize="26sp" android:lines="1"
         android:shadowColor="@android:color/black" android:shadowRadius="18"
-        android:layout_centerVertical="true" android:text="Hero of War asdas a bigger text that we should show"
+        android:layout_centerVertical="true" android:text=""
         android:singleLine="true" android:ellipsize="end"
         android:paddingLeft="10dp" android:paddingRight="10dp"
         android:paddingBottom="35dp"/>
@@ -28,7 +28,7 @@
         android:layout_above="@id/trackNameTv" android:textSize="17sp"
         android:singleLine="true" android:ellipsize="end"
         android:paddingLeft="18dp" android:paddingRight="18dp"
-        android:layout_centerVertical="true" android:text="Rise Against and another huge band name that we could show"/>
+        android:layout_centerVertical="true" android:text=""/>
 
     <android.support.wearable.view.DelayedConfirmationView
         android:id="@+id/delay_view"

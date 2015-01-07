@@ -31,8 +31,14 @@ public class MobileConnection implements GoogleApiClient.ConnectionCallbacks, Go
         return instance;
     }
 
-    public static void createInstance(Context context) {
+    public static MobileConnection getInstance(Context context) {
+        if (instance == null) {
+            createInstance(context);
+        }
+        return instance;
+    }
 
+    public static void createInstance(Context context) {
         if (instance == null) {
             instance = new MobileConnection(context);
         }

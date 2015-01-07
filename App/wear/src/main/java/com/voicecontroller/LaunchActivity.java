@@ -40,6 +40,11 @@ public class LaunchActivity extends Activity implements MessageCallback {
             public void onLayoutInflated(WatchViewStub stub) {
                 queryTv = (TextView) stub.findViewById(R.id.queryNameTv);
                 mainLayout = stub.findViewById(R.id.mainLayout);
+
+                if (query != null && !query.isEmpty()) {
+                    queryTv.setText(query);
+                    mainLayout.setVisibility(View.VISIBLE);
+                }
             }
         });
     }
@@ -48,10 +53,10 @@ public class LaunchActivity extends Activity implements MessageCallback {
     protected void onStart() {
         super.onStart();
         query = getIntent().getStringExtra(SearchManager.QUERY);
-        handleQuery(query, true);
+        handleQuery(true);
     }
 
-    private void handleQuery(String query, boolean cameFromSystemVoiceAction) {
+    private void handleQuery(boolean cameFromSystemVoiceAction) {
         if (query != null && !query.isEmpty()) {
             if (cameFromSystemVoiceAction && query.toLowerCase().equals("music")) {
                 displaySpeechRecognizer();
@@ -63,26 +68,14 @@ public class LaunchActivity extends Activity implements MessageCallback {
                 if (queryTv != null && mainLayout != null) {
                     queryTv.setText(query);
                     mainLayout.setVisibility(View.VISIBLE);
-                } else {
-                    final String queryText = query;
-                    final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
-                    stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
-                        @Override
-                        public void onLayoutInflated(WatchViewStub stub) {
-                            queryTv = (TextView) stub.findViewById(R.id.queryNameTv);
-                            mainLayout = stub.findViewById(R.id.mainLayout);
-                            mainLayout.setVisibility(View.VISIBLE);
-                            queryTv.setText(queryText);
-                        }
-                    });
                 }
 
                 startTimestamp = System.currentTimeMillis();
-
                 MobileConnection.getInstance().sendQuery(query, this);
             }
         } else if (SHOULD_FAKE_QUERY) {
-            handleQuery("Anavae World in a Bottle next", false);
+            query = "Anavae World in a Bottle next";
+            handleQuery(false);
         } else {
             displaySpeechRecognizer();
         }
@@ -105,8 +98,8 @@ public class LaunchActivity extends Activity implements MessageCallback {
         if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
             List<String> results = data.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS);
-            String spokenText = results.get(0);
-            handleQuery(spokenText, false);
+            query = results.get(0);
+            handleQuery(false);
         } else if (requestCode == SPEECH_REQUEST_CODE) {
             finish();
         }

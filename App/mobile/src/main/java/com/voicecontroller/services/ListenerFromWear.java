@@ -13,9 +13,12 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.voicecontroller.BuildConfig;
+import com.voicecontroller.R;
 import com.voicecontroller.models.MediaCommandType;
 import com.voicecontroller.models.QueryResults;
 import com.voicecontroller.models.VoiceQuery;
+import com.voicecontroller.oauth.OAuthRecord;
+import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.nativeplayer.NativePlayer;
 
@@ -80,14 +83,19 @@ public class ListenerFromWear extends WearableListenerService {
     }
 
     private void onQueryReceived(String query, WearableConnection connection) throws JSONException, UnsupportedEncodingException {
-        VoiceQuery voiceQuery = new VoiceQuery(query);
-
-        if (voiceQuery.isMediaCommand()) {
-            sendMediaCommand(voiceQuery.getMediaCommand());
+        OAuthRecord record = OAuthService.getOAuthToken();
+        if (record == null) {
+            // No record found. User needs to log in into the app.
+            connection.sendAlert(getString(R.string.login_app_alert_title), getString(R.string.login_app_alert_description));
         } else {
-            QueryResults results = TrackHandler.lookForTrack(voiceQuery, connection, this);
-            if (results != null) {
-                queryResults.put(results.getId(), results);
+            VoiceQuery voiceQuery = new VoiceQuery(query);
+            if (voiceQuery.isMediaCommand()) {
+                sendMediaCommand(voiceQuery.getMediaCommand());
+            } else {
+                QueryResults results = TrackHandler.lookForTrack(voiceQuery, connection, this);
+                if (results != null) {
+                    queryResults.put(results.getId(), results);
+                }
             }
         }
     }

@@ -47,7 +47,7 @@
             android:label="@string/app_name" >
         </activity>
         <activity
-            android:name=".NoResultsActivity"
+            android:name=".AlertActivity"
             android:label="@string/app_name" >
         </activity>
     </application>

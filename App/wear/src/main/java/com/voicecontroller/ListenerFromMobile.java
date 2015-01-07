@@ -1,10 +1,6 @@
 package com.voicecontroller;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.content.Intent;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.google.android.gms.wearable.DataMap;
@@ -34,9 +30,11 @@ public class ListenerFromMobile extends WearableListenerService {
                 i.putExtra("trackUri", data.getString("id"));
                 i.putExtra("confirmation_time", data.getInt("confirmation_time"));
                 startActivity(i);
-            } else if (path.equalsIgnoreCase("no_results")) {
-                Intent i = new Intent(this, NoResultsActivity.class);
+            } else if (path.equalsIgnoreCase("alert") && data != null) {
+                Intent i = new Intent(this, AlertActivity.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                i.putExtra("title", data.getString("title"));
+                i.putExtra("description", data.getString("description"));
                 startActivity(i);
             }
         } catch (Exception e) {

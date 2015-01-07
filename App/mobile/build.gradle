@@ -20,8 +20,8 @@ android {
         applicationId "com.voicecontroller"
         minSdkVersion 19
         targetSdkVersion 21
-        versionCode 10
-        versionName "1.1.0"
+        versionCode 11
+        versionName "1.1.1"
     }
     buildTypes {
         release {
@@ -33,8 +33,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    wearApp project(':wear')
     compile project(':libraries:Donations')
+    wearApp project(':wear')
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile 'com.google.android.gms:play-services:6.5.87'
     compile 'com.github.satyan:sugar:1.3'

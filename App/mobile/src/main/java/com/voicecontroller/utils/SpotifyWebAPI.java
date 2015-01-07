@@ -571,29 +571,41 @@ public class SpotifyWebAPI {
     }
 
     private static String get(String urlStr, String auth) throws IOException {
-        URL url = new URL(urlStr);
-        HttpURLConnection conn =
-                (HttpURLConnection) url.openConnection();
+        HttpURLConnection conn = null;
+        String line = null;
+        try {
+            URL url = new URL(urlStr);
+            conn = (HttpURLConnection) url.openConnection();
 
-        if (auth != null && !auth.isEmpty()) {
-            conn.setRequestProperty("Authorization", "Bearer " + auth);
+            if (auth != null && !auth.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + auth);
+            }
+
+            if (conn.getResponseCode() != 200) {
+                throw new IOException(conn.getResponseMessage());
+            }
+
+            // Buffer the result into a string
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            while ((line = rd.readLine()) != null) {
+                sb.append(line);
+            }
+            rd.close();
+
+            conn.disconnect();
+            return sb.toString();
+        } catch (IOException e) {
+            Crashlytics.setString("url", urlStr);
+            Crashlytics.setBool("has_auth", auth != null);
+            if (conn != null) {
+                Crashlytics.setInt("status_code", conn.getResponseCode());
+            }
+            if (line != null && !line.isEmpty()) {
+                Crashlytics.setString("content", line);
+            }
+            throw e;
         }
-
-        if (conn.getResponseCode() != 200) {
-            throw new IOException(conn.getResponseMessage());
-        }
-
-        // Buffer the result into a string
-        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = rd.readLine()) != null) {
-            sb.append(line);
-        }
-        rd.close();
-
-        conn.disconnect();
-        return sb.toString();
     }
 
     private static String post(String urlStr, String auth, String encodedParams) throws IOException {

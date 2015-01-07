@@ -33,7 +33,6 @@ import com.voicecontroller.oauth.OAuthRecord;
 import com.voicecontroller.oauth.OAuthService;
 import com.voicecontroller.settings.Settings;
 import com.voicecontroller.utils.SpotifyWebAPI;
-import com.voicecontroller.views.CommandRenameAdapter;
 
 import org.sufficientlysecure.donations.DonationsFragment;
 
@@ -225,36 +224,37 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     private void switchTo(Fragment fragment) {
+        try {
+            if (mFragment != null && mFragment.getClass() == fragment.getClass())
+                return; // Cancel if they are from the same class
 
-        if (mFragment != null && mFragment.getClass() == fragment.getClass())
-            return; // Cancel if they are from the same class
+            if (mainActivity.get() != null && !mainActivity.get().isFinishing()) {
+                FragmentTransaction ft = getFragmentManager().beginTransaction();
 
-        if (mainActivity.get() != null && !mainActivity.get().isFinishing()) {
-            FragmentTransaction ft = getFragmentManager().beginTransaction();
+                if (mFragment != null) {
+                    if (!(mFragment instanceof LoginFragment || mFragment instanceof ProfileFragment)) {
+                        ft.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right);
+                    } else if (!(fragment instanceof ProfileFragment || fragment instanceof LoginFragment)) {
+                        ft.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left);
+                    } else if (fragment instanceof ProfileFragment) {
+                        ft.setCustomAnimations(R.animator.slide_in_bottom, R.animator.slide_out_top);
+                    } else {
+                        ft.setCustomAnimations(R.animator.slide_in_top, R.animator.slide_out_bottom);
+                    }
+                }
 
-            if (mFragment != null) {
-                if (!(mFragment instanceof LoginFragment || mFragment instanceof ProfileFragment)) {
-                    ft.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right);
-                } else if (!(fragment instanceof ProfileFragment || fragment instanceof LoginFragment)) {
-                    ft.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left);
-                } else if (fragment instanceof ProfileFragment) {
-                    ft.setCustomAnimations(R.animator.slide_in_bottom, R.animator.slide_out_top);
-                } else {
-                    ft.setCustomAnimations(R.animator.slide_in_top, R.animator.slide_out_bottom);
+                if (mFragment == null) {
+                    fl.removeAllViewsInLayout();
+                }
+
+                invalidateOptionsMenu();
+                ft.replace(fl.getId(), fragment).commitAllowingStateLoss();
+                mFragment = fragment;
+
+                if (mFragment instanceof LoginFragment) {
+                    ((LoginFragment) mFragment).showButton();
                 }
             }
-
-            if (mFragment == null) {
-                fl.removeAllViewsInLayout();
-            }
-
-            invalidateOptionsMenu();
-            ft.replace(fl.getId(), fragment).commitAllowingStateLoss();
-            mFragment = fragment;
-
-            if (mFragment instanceof LoginFragment) {
-                ((LoginFragment)mFragment).showButton();
-            }
-        }
+        } catch (IllegalStateException e) {}
     }
 }
